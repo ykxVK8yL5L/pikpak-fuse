@@ -18,6 +18,7 @@ username.rmempty = false
 password = e:option(Value, "password", translate("Password"))
 password.description = translate("Password")
 password.rmempty = false
+password.password = true
 
 proxy_url = e:option(Value, "proxy_url", translate("Proxy Url"))
 proxy_url.description = translate("Proxy Url")
