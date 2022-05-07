@@ -42,7 +42,7 @@ pub struct ListFileRequest<'a> {
 pub struct ListFileResponse {
     pub kind : String,
     pub next_page_token : String,
-    pub files: Vec<pikpakFile>,
+    pub files: Vec<PikpakFile>,
 }
 
 
