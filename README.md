@@ -1,15 +1,17 @@
-# 未完成 不能使用
+# 基本完成
+命令行使用【可选参数--proxy-url xxxxxxxx】:
+```
+./pikpak-fuse --pikpak-user XXXXXXXXX --pikpak-password XXXXXXX  -w token保存目录  挂载点
+```
 
+# 请用用来挂载到本地Docker版不太实用就不说了
 
+# 安装[可能需要给执行权限]
+* 在[relase](https://github.com/ykxVK8yL5L/pikpak-fuse/releases)下载所需二进制，用命令行启动
+* pip install pikpak-fuse
 
 
 # pikpak-fuse
-
-[![GitHub Actions](https://github.com/ykxVK8yL5L/pikpak-fuse/workflows/CI/badge.svg)](https://github.com/ykxVK8yL5L/pikpak-fuse/actions?query=workflow%3ACI)
-[![PyPI](https://img.shields.io/pypi/v/pikpak-fuse.svg)](https://pypi.org/project/pikpak-fuse)
-[![Docker Image](https://img.shields.io/docker/pulls/ykxVK8yL5L/pikpak-fuse.svg?maxAge=2592000)](https://hub.docker.com/r/ykxVK8yL5L/pikpak-fuse/)
-[![pikpak-fuse](https://snapcraft.io/pikpak-fuse/badge.svg)](https://snapcraft.io/pikpak-fuse)
-[![Crates.io](https://img.shields.io/crates/v/pikpak-fuse.svg)](https://crates.io/crates/pikpak-fuse)
 
 > 🚀 Help me to become a full-time open-source developer by [sponsoring me on GitHub](https://github.com/sponsors/ykxVK8yL5L)
 
@@ -18,7 +20,7 @@ pikpak网盘 FUSE 磁盘挂载，主要用于配合 [Emby](https://emby.media) �
 1. 目前只读，不支持写入
 2. 支持 Linux 和 macOS，暂不支持 Windows
 
-[pikpakDrive-webdav](https://github.com/ykxVK8yL5L/pikpakDrive-webdav) 项目已经实现了通过 WebDAV 访问pikpak网盘内容，但由于 Emby 和 Jellyfin 都不支持直接访问 WebDAV 资源，
+[pikpak-webdav](https://github.com/ykxVK8yL5L/pikpak-webdav) 项目已经实现了通过 WebDAV 访问pikpak网盘内容，但由于 Emby 和 Jellyfin 都不支持直接访问 WebDAV 资源，
 需要配合 [rclone](https://rclone.org) 之类的软件将 WebDAV 挂载为本地磁盘，而本项目则直接通过 FUSE 实现将pikpak网盘挂载为本地磁盘，省去使用 rclone 再做一层中转。
 
 ## 安装
@@ -34,7 +36,7 @@ pikpak网盘 FUSE 磁盘挂载，主要用于配合 [Emby](https://emby.media) �
 pip install pikpak-fuse
 ```
 
-如果系统支持 [Snapcraft](https://snapcraft.io) 比如 Ubuntu、Debian 等，也可以使用 snap 安装：
+如果系统支持 [Snapcraft](https://snapcraft.io) 比如 Ubuntu、Debian 等，也可以使用 snap 安装【未实现】：
 
 ```bash
 sudo snap install pikpak-fuse
@@ -46,12 +48,12 @@ sudo snap install pikpak-fuse
 aarch64/arm/x86_64/i686 等架构的版本，可以下载后使用 opkg 安装，以 nanopi r4s 为例：
 
 ```bash
-wget https://github.com/ykxVK8yL5L/pikpak-fuse/releases/download/v0.1.11/pikpak-fuse_0.1.11-1_aarch64_generic.ipk
-wget https://github.com/ykxVK8yL5L/pikpak-fuse/releases/download/v0.1.11/luci-app-pikpak-fuse_0.1.11_all.ipk
-wget https://github.com/ykxVK8yL5L/pikpak-fuse/releases/download/v0.1.11/luci-i18n-pikpak-fuse-zh-cn_0.1.11-1_all.ipk
-opkg install pikpak-fuse_0.1.11-1_aarch64_generic.ipk
-opkg install luci-app-pikpak-fuse_0.1.11_all.ipk
-opkg install luci-i18n-pikpak-fuse-zh-cn_0.1.11-1_all.ipk
+wget https://github.com/ykxVK8yL5L/pikpak-fuse/releases/download/v0.1.12/pikpak-fuse_0.1.12-1_aarch64_generic.ipk
+wget https://github.com/ykxVK8yL5L/pikpak-fuse/releases/download/v0.1.12/luci-app-pikpak-fuse_0.1.12_all.ipk
+wget https://github.com/ykxVK8yL5L/pikpak-fuse/releases/download/v0.1.12/luci-i18n-pikpak-fuse-zh-cn_0.1.12-1_all.ipk
+opkg install pikpak-fuse_0.1.12-1_aarch64_generic.ipk
+opkg install luci-app-pikpak-fuse_0.1.12_all.ipk
+opkg install luci-i18n-pikpak-fuse-zh-cn_0.1.12-1_all.ipk
 ```
 
 其它 CPU 架构的路由器可在 [GitHub Releases](https://github.com/ykxVK8yL5L/pikpak-fuse/releases) 页面中查找对应的架构的主程序 ipk 文件下载安装。
@@ -71,7 +73,10 @@ OPTIONS:
         --allow-other                            Allow other users to access the drive
         --domain-id <DOMAIN_ID>                  Aliyun PDS domain id
     -h, --help                                   Print help information
-    -r, --refresh-token <REFRESH_TOKEN>          Aliyun drive refresh token [env: REFRESH_TOKEN=]
+    --pikpak-user <Pikpak_USER>                  [env: Pikpak_USER=]
+    --pikpak-password <Pikpak_PASSWORD>          [env: Pikpak_PASSWORD=]
+    --proxy-url <PROXY_URL>                      [env: PROXY_URL=]
+    
     -S, --read-buffer-size <READ_BUFFER_SIZE>    Read/download buffer size in bytes, defaults to 10MB [default: 10485760]
     -V, --version                                Print version information
     -w, --workdir <WORKDIR>                      Working directory, refresh_token will be stored in there if specified
@@ -81,7 +86,7 @@ OPTIONS:
 
 ```bash
 mkdir -p /mnt/pikpakDrive /var/run/pikpak-fuse
-pikpak-fuse -r your-refresh-token -w /var/run/pikpak-fuse /mnt/pikpakDrive
+pikpak-fuse --pikpak-user XXXXXXXXX --pikpak-password XXXXXXX -w /var/run/pikpak-fuse /mnt/pikpakDrive
 ```
 
 ## Emby/Jellyfin
