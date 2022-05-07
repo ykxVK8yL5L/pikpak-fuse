@@ -32,7 +32,7 @@ define Package/pikpak-fuse
   SECTION:=multimedia
   CATEGORY:=Multimedia
   DEPENDS:=+fuse-utils
-  TITLE:=FUSE for pikpakDrive
+  TITLE:=FUSE for pikpak
   URL:=https://github.com/ykxVK8yL5L/pikpak-fuse
 endef
 
