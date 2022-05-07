@@ -4,7 +4,7 @@
 ./pikpak-fuse --pikpak-user XXXXXXXXX --pikpak-password XXXXXXX  -w token保存目录  挂载点
 ```
 
-# 请用用来挂载到本地Docker版不太实用就不说了
+# 挂载到本地Docker版不太实用就不说了
 
 # 安装[可能需要给执行权限]
 * 在[relase](https://github.com/ykxVK8yL5L/pikpak-fuse/releases)下载所需二进制，用命令行启动
