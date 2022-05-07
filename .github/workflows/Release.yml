@@ -1,4 +1,4 @@
-name: Release
+name: Release for Macos Linux Docker Pypi
 on:
   repository_dispatch:
   workflow_dispatch:
