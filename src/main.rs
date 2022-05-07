@@ -21,10 +21,10 @@ struct Opt {
     #[clap(parse(from_os_str))]
     path: PathBuf,
 
-    #[structopt(long, env = "pikpak_USER")]
+    #[structopt(long, env = "Pikpak_USER")]
     pikpak_user: String,
 
-    #[structopt(long, env = "pikpak_PASSWORD")]
+    #[structopt(long, env = "Pikpak_PASSWORD")]
     pikpak_password: String,
 
     #[structopt(long, env = "PROXY_URL", default_value = "")]
@@ -76,12 +76,12 @@ fn main() -> anyhow::Result<()> {
     };
 
 
-    let drive = pikpakDrive::new(drive_config,credentials).map_err(|_| {
+    let drive = PikpakDrive::new(drive_config,credentials).map_err(|_| {
         io::Error::new(io::ErrorKind::Other, "initialize pikpakDrive client failed")
     })?;
 
     let _nick_name = drive.nick_name.clone();
-    let vfs = pikpakDriveFileSystem::new(drive, opt.read_buffer_size);
+    let vfs = PikpakDriveFileSystem::new(drive, opt.read_buffer_size);
     let mut mount_options = vec![MountOption::AutoUnmount, MountOption::NoAtime];
     // read only for now
     mount_options.push(MountOption::RO);
