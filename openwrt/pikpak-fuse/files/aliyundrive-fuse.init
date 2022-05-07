@@ -5,7 +5,7 @@ USE_PROCD=1
 START=99
 STOP=15
 
-NAME=PikpakDrive-fuse
+NAME=Pikpak-fuse
 
 uci_get_by_type() {
 	local ret=$(uci get $NAME.@$1[0].$2 2>/dev/null)
@@ -16,30 +16,30 @@ start_service() {
   local enable=$(uci_get_by_type default enable)
   case "$enable" in
     1|on|true|yes|enabled)
-      local refresh_token=$(uci_get_by_type default refresh_token)
-      local domain_id=$(uci_get_by_type default domain_id)
+      local username=$(uci_get_by_type default username)
+      local password=$(uci_get_by_type default password)
+      local proxy_url=$(uci_get_by_type default proxy_url)
       local mount_point=$(uci_get_by_type default mount_point)
       local read_buf_size=$(uci_get_by_type default read_buffer_size 10485760)
-      local allow_other=$(uci_get_by_type default allow_other 0)
 
       local extra_options=""
 
-      if [[ ! -z "$domain_id" ]]; then
-        extra_options="$extra_options --domain-id $domain_id"
-      fi
+      # if [[ ! -z "$domain_id" ]]; then
+      #   extra_options="$extra_options --domain-id $domain_id"
+      # fi
 
-      if [ "$allow_other" = "1" ]; then
-        extra_options="$extra_options --allow-other"
-      fi
-
+ 
       mkdir -p "$mount_point"
       procd_open_instance
       procd_set_param command /bin/sh -c "/usr/bin/$NAME $extra_options -S $read_buf_size --workdir /var/run/$NAME $mount_point >>/var/log/$NAME.log 2>&1"
       procd_set_param pidfile /var/run/$NAME.pid
-      procd_set_param env REFRESH_TOKEN="$refresh_token"
+      procd_set_param env PIKPAK_USER="$username"
+      procd_set_param env PIKPAK_PASSWORD="$password"
+      procd_set_param env PROXY_URL="$proxy_url"
+
       case $(uci_get_by_type default debug) in
         1|on|true|yes|enabled)
-          procd_append_param env RUST_LOG="PikpakDrive_fuse=debug" ;;
+          procd_append_param env RUST_LOG="Pikpak_fuse=debug" ;;
         *) ;;
       esac
       procd_close_instance ;;
@@ -49,5 +49,5 @@ start_service() {
 }
 
 service_triggers() {
-	procd_add_reload_trigger "PikpakDrive-fuse"
+	procd_add_reload_trigger "Pikpak-fuse"
 }

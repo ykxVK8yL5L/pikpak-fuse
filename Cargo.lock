@@ -3,8 +3,8 @@
 version = 3
 
 [[package]]
-name = "PikpakDrive-fuse"
-version = "0.1.11"
+name = "Pikpak-fuse"
+version = "0.1.12"
 dependencies = [
  "anyhow",
  "bytes",

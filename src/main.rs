@@ -15,15 +15,11 @@ mod file_cache;
 mod vfs;
 
 #[derive(Parser, Debug)]
-#[clap(name = "PikpakDrive-fuse", about, version, author)]
+#[clap(name = "Pikpak-fuse", about, version, author)]
 struct Opt {
     /// Mount point
     #[clap(parse(from_os_str))]
     path: PathBuf,
-    /// Pikpak drive refresh token
-    // #[clap(short, long, env = "REFRESH_TOKEN", default_value = "")]
-    // refresh_token: String,
-
 
     #[structopt(long, env = "PIKPAK_USER")]
     pikpak_user: String,
@@ -33,7 +29,6 @@ struct Opt {
 
     #[structopt(long, env = "PROXY_URL", default_value = "")]
     proxy_url: String,
-
 
     /// Working directory, refresh_token will be stored in there if specified
     #[clap(short = 'w', long)]
@@ -59,25 +54,21 @@ fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
 
     let opt = Opt::parse();
-    // let drive_config = if let Some(domain_id) = opt.domain_id {
-    //     DriveConfig {
-    //         api_base_url: format!("https://{}.api.aliyunpds.com", domain_id),
-    //         refresh_token_url: format!("https://{}.auth.aliyunpds.com/v2/account/token", domain_id),
-    //         workdir: opt.workdir,
-    //     }
-    // } else {
-    //     DriveConfig {
-    //         api_base_url: "https://api.PikpakDrive.com".to_string(),
-    //         refresh_token_url: "https://websv.PikpakDrive.com/token/refresh".to_string(),
-    //         workdir: opt.workdir,
-    //     }
-    // };
-
-    let drive_config = DriveConfig {
-        api_base_url: "https://api-drive.mypikpak.com/drive/v1/files".to_string(),
-        refresh_token_url: "https://user.mypikpak.com/v1/auth/signin".to_string(),
-        workdir: opt.workdir,
+    let drive_config = if opt.proxy_url.is_empty() {
+        DriveConfig {
+            api_base_url: "https://api-drive.mypikpak.com/drive/v1/files".to_string(),
+            refresh_token_url: "https://user.mypikpak.com/v1/auth/signin".to_string(),
+            workdir: opt.workdir,
+        }
+    } else {
+        DriveConfig {
+            api_base_url: format!("{}/https://api-drive.mypikpak.com/drive/v1/files", opt.proxy_url),
+            refresh_token_url: format!("{}/https://user.mypikpak.com/v1/auth/signin",opt.proxy_url),
+            workdir: opt.workdir,
+        }
     };
+
+   
 
     let credentials = Credentials{
         username:opt.pikpak_user,

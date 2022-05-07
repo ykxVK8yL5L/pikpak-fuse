@@ -1,5 +1,5 @@
-name: PikpakDrive-fuse
-version: '0.1.11'
+name: Pikpak-fuse
+version: '0.1.12'
 summary: PikPak网盘 FUSE
 description: |
   PikPak网盘 FUSE 磁盘挂载
@@ -20,12 +20,12 @@ architectures:
   - build-on: armhf
 
 parts:
-  PikpakDrive-fuse:
+  Pikpak-fuse:
     plugin: rust
     source: .
     stage-packages:
       - fuse3
 
 apps:
-  PikpakDrive-fuse:
-    command: bin/PikpakDrive-fuse
+  Pikpak-fuse:
+    command: bin/Pikpak-fuse

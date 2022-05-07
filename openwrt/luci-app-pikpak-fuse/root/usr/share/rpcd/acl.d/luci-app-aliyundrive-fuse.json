@@ -1,0 +1,11 @@
+{
+	"luci-app-Pikpak-fuse": {
+		"description": "Grant UCI access for luci-app-Pikpak-fuse",
+		"read": {
+			"uci": [ "Pikpak-fuse" ]
+		},
+		"write": {
+			"uci": [ "Pikpak-fuse" ]
+		}
+	}
+}

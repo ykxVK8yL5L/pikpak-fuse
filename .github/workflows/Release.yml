@@ -1,10 +1,12 @@
 name: Release
-
 on:
-  push:
-    branches: [ main ]
-    tags: [ 'v*' ]
-  pull_request:
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release'
+        required: true
+        default: 'v0.1.12'
 
 jobs:
   macos:
@@ -43,25 +45,19 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: apple-darwin-bin
-          path: target/x86_64-apple-darwin/release/PikpakDrive-fuse
+          path: target/x86_64-apple-darwin/release/Pikpak-fuse
           if-no-files-found: error
-      - name: Get tag
-        if: "startsWith(github.ref, 'refs/tags/')"
-        id: tag
-        uses: dawidd6/action-get-tag@v1
       - name: Archive binary
-        if: "startsWith(github.ref, 'refs/tags/')"
         run: |
           cd target/x86_64-apple-darwin/release
-          tar czvf PikpakDrive-fuse-${{ steps.tag.outputs.tag }}.apple-darwin.tar.gz PikpakDrive-fuse
-          shasum -a 256 PikpakDrive-fuse-${{ steps.tag.outputs.tag }}.apple-darwin.tar.gz > PikpakDrive-fuse-${{ steps.tag.outputs.tag }}.apple-darwin.tar.gz.sha256
+          tar czvf Pikpak-fuse-${{ steps.tag.outputs.tag }}.apple-darwin.tar.gz Pikpak-fuse
+          shasum -a 256 Pikpak-fuse-${{ steps.tag.outputs.tag }}.apple-darwin.tar.gz > Pikpak-fuse-${{ steps.tag.outputs.tag }}.apple-darwin.tar.gz.sha256
           cd -
       - name: Upload binary to GitHub Release
         uses: svenstaro/upload-release-action@v2
-        if: "startsWith(github.ref, 'refs/tags/')"
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/x86_64-apple-darwin/release/PikpakDrive-fuse*.tar.gz
+          file: target/x86_64-apple-darwin/release/Pikpak-fuse*.tar.gz
           file_glob: true
           overwrite: true
           tag: ${{ github.ref }}
@@ -80,7 +76,7 @@ jobs:
           { target: "arm-unknown-linux-musleabi", image_tag: "arm-musleabi", wheel: false, deb: false },
         ]
     container:
-      image: docker://messense/rust-musl-cross:${{ matrix.platform.image_tag }}
+      image: docker://ykxVK8yL5L/rust-musl-cross:${{ matrix.platform.image_tag }}
       env:
         CFLAGS_armv7_unknown_linux_musleabihf: '-mfpu=vfpv3-d16'
     steps:
@@ -126,62 +122,54 @@ jobs:
         uses: crazy-max/ghaction-upx@v1
         with:
           version: latest
-          files: target/${{ matrix.platform.target }}/release/PikpakDrive-fuse
+          files: target/${{ matrix.platform.target }}/release/Pikpak-fuse
       - name: Upload binary artifacts
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.platform.target }}-bin
-          path: target/${{ matrix.platform.target }}/release/PikpakDrive-fuse
+          path: target/${{ matrix.platform.target }}/release/Pikpak-fuse
           if-no-files-found: error
       - name: Upload deb artifacts
         if: matrix.platform.deb
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.platform.target }}-deb
-          path: target/${{ matrix.platform.target }}/debian/PikpakDrive-fuse_*.deb
+          path: target/${{ matrix.platform.target }}/debian/Pikpak-fuse_*.deb
           if-no-files-found: error
       - name: Upload RPM artifacts
         if: matrix.platform.deb
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.platform.target }}-rpm
-          path: target/${{ matrix.platform.target }}/generate-rpm/PikpakDrive-fuse*.rpm
+          path: target/${{ matrix.platform.target }}/generate-rpm/Pikpak-fuse*.rpm
           if-no-files-found: error
-      - name: Get tag
-        if: "startsWith(github.ref, 'refs/tags/')"
-        id: tag
-        uses: dawidd6/action-get-tag@v1
       - name: Archive binary
-        if: "startsWith(github.ref, 'refs/tags/')"
         run: |
           cd target/${{ matrix.platform.target }}/release
-          tar czvf PikpakDrive-fuse-${{ steps.tag.outputs.tag }}.${{ matrix.platform.target }}.tar.gz PikpakDrive-fuse
-          shasum -a 256 PikpakDrive-fuse-${{ steps.tag.outputs.tag }}.${{ matrix.platform.target }}.tar.gz > PikpakDrive-fuse-${{ steps.tag.outputs.tag }}.${{ matrix.platform.target }}.tar.gz.sha256
+          tar czvf Pikpak-fuse-${{ steps.tag.outputs.tag }}.${{ matrix.platform.target }}.tar.gz Pikpak-fuse
+          shasum -a 256 Pikpak-fuse-${{ steps.tag.outputs.tag }}.${{ matrix.platform.target }}.tar.gz > Pikpak-fuse-${{ steps.tag.outputs.tag }}.${{ matrix.platform.target }}.tar.gz.sha256
           cd -
       - name: Upload binary to GitHub Release
         uses: svenstaro/upload-release-action@v2
-        if: "startsWith(github.ref, 'refs/tags/')"
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/${{ matrix.platform.target }}/release/PikpakDrive-fuse*.tar.gz*
+          file: target/${{ matrix.platform.target }}/release/Pikpak-fuse*.tar.gz*
           file_glob: true
           overwrite: true
           tag: ${{ github.ref }}
       - name: Upload deb to GitHub Release
         uses: svenstaro/upload-release-action@v2
-        if: "startsWith(github.ref, 'refs/tags/') && matrix.platform.deb"
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/${{ matrix.platform.target }}/debian/PikpakDrive-fuse_*.deb
+          file: target/${{ matrix.platform.target }}/debian/Pikpak-fuse_*.deb
           file_glob: true
           overwrite: true
           tag: ${{ github.ref }}
       - name: Upload RPM to GitHub Release
         uses: svenstaro/upload-release-action@v2
-        if: "startsWith(github.ref, 'refs/tags/') && matrix.platform.deb"
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/${{ matrix.platform.target }}/generate-rpm/PikpakDrive-fuse*.rpm
+          file: target/${{ matrix.platform.target }}/generate-rpm/Pikpak-fuse*.rpm
           file_glob: true
           overwrite: true
           tag: ${{ github.ref }}
@@ -231,8 +219,8 @@ jobs:
       - name: Build Package
         run: |
           echo "src-link PikpakDrive $GITHUB_WORKSPACE/openwrt" > openwrt-sdk/feeds.conf
-          echo 'CONFIG_PACKAGE_PikpakDrive-fuse=y
-          CONFIG_PACKAGE_luci-app-PikpakDrive-fuse=y
+          echo 'CONFIG_PACKAGE_Pikpak-fuse=y
+          CONFIG_PACKAGE_luci-app-Pikpak-fuse=y
           ' >> openwrt-sdk/.config
           cd openwrt-sdk
           cat feeds.conf.default >> feeds.conf
@@ -240,20 +228,20 @@ jobs:
           ./scripts/feeds update -a > /dev/null
           make defconfig
           ./scripts/feeds install -d y -p "PikpakDrive" -f -a
-          make package/PikpakDrive-fuse/compile V=s
-          make package/luci-app-PikpakDrive-fuse/compile V=s
+          make package/Pikpak-fuse/compile V=s
+          make package/luci-app-Pikpak-fuse/compile V=s
           tree bin/packages/
       - name: Archive package
         uses: actions/upload-artifact@v2
         with:
-          name: PikpakDrive-fuse-openwrt-${{ matrix.target.arch }}
-          path: openwrt-sdk/bin/packages/*/PikpakDrive/PikpakDrive-fuse*.ipk
+          name: Pikpak-fuse-openwrt-${{ matrix.target.arch }}
+          path: openwrt-sdk/bin/packages/*/PikpakDrive/Pikpak-fuse*.ipk
           if-no-files-found: error
       - name: Archive luci packages
         uses: actions/upload-artifact@v2
         if: ${{ matrix.target.arch == 'aarch64_generic' }}
         with:
-          name: PikpakDrive-fuse-openwrt-${{ matrix.target.arch }}
+          name: Pikpak-fuse-openwrt-${{ matrix.target.arch }}
           path: openwrt-sdk/bin/packages/*/PikpakDrive/luci-*.ipk
           if-no-files-found: error
       - name: Upload package to GitHub Release
@@ -263,7 +251,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file_glob: true
           overwrite: true
-          file: openwrt-sdk/bin/packages/*/PikpakDrive/PikpakDrive-fuse*.ipk
+          file: openwrt-sdk/bin/packages/*/PikpakDrive/Pikpak-fuse*.ipk
           tag: ${{ github.ref }}
       - name: Upload luci packages to GitHub Release
         uses: svenstaro/upload-release-action@v2
@@ -286,37 +274,37 @@ jobs:
         with:
           name: x86_64-unknown-linux-musl-bin
       - run: |
-          chmod a+x PikpakDrive-fuse
-          mv PikpakDrive-fuse PikpakDrive-fuse-amd64
+          chmod a+x Pikpak-fuse
+          mv Pikpak-fuse Pikpak-fuse-amd64
       - uses: actions/download-artifact@v2
         with:
           name: i686-unknown-linux-musl-bin
       - run: |
-          chmod a+x PikpakDrive-fuse
-          mv PikpakDrive-fuse PikpakDrive-fuse-386
+          chmod a+x Pikpak-fuse
+          mv Pikpak-fuse Pikpak-fuse-386
       - uses: actions/download-artifact@v2
         with:
           name: aarch64-unknown-linux-musl-bin
       - run: |
-          chmod a+x PikpakDrive-fuse
-          mv PikpakDrive-fuse PikpakDrive-fuse-arm64
+          chmod a+x Pikpak-fuse
+          mv Pikpak-fuse Pikpak-fuse-arm64
       - uses: actions/download-artifact@v2
         with:
           name: armv7-unknown-linux-musleabihf-bin
       - run: |
-          chmod a+x PikpakDrive-fuse
-          mv PikpakDrive-fuse PikpakDrive-fuse-armv7
+          chmod a+x Pikpak-fuse
+          mv Pikpak-fuse Pikpak-fuse-armv7
       - uses: actions/download-artifact@v2
         with:
           name: arm-unknown-linux-musleabihf-bin
       - run: |
-          chmod a+x PikpakDrive-fuse
-          mv PikpakDrive-fuse PikpakDrive-fuse-armv6
+          chmod a+x Pikpak-fuse
+          mv Pikpak-fuse Pikpak-fuse-armv6
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v3
         with:
-          images: messense/PikpakDrive-fuse
+          images: ykxVK8yL5L/Pikpak-fuse
           tags: |
             type=schedule
             type=ref,event=branch
@@ -349,7 +337,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: PyPI
-      url: https://pypi.org/project/PikpakDrive-fuse/
+      url: https://pypi.org/project/Pikpak-fuse/
     if: "startsWith(github.ref, 'refs/tags/')"
     needs: [ linux, macos ]
     steps:

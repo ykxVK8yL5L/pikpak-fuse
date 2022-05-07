@@ -1,11 +1,11 @@
 [package]
-name = "PikpakDrive-fuse"
-version = "0.1.11"
+name = "Pikpak-fuse"
+version = "0.1.12"
 edition = "2021"
-description = "FUSE for PikpakDrive"
+description = "FUSE for Pikpak"
 license = "MIT"
-homepage = "https://github.com/messense/PikpakDrive-fuse"
-repository = "https://github.com/messense/PikpakDrive-fuse.git"
+homepage = "https://github.com/ykxVK8yL5L/Pikpak-fuse"
+repository = "https://github.com/ykxVK8yL5L/Pikpak-fuse.git"
 readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -38,8 +38,8 @@ lto = true
 opt-level = "z"  # Optimize for size
 
 [package.metadata.deb]
-maintainer = "messense <messense@icloud.com>"
-copyright = "2021-present, messense <messense@icloud.com>"
+maintainer = "ykxVK8yL5L <ykxVK8yL5L@icloud.com>"
+copyright = "2021-present, ykxVK8yL5L <ykxVK8yL5L@icloud.com>"
 license-file = ["LICENSE", "4"]
 extended-description = """\
 PikPak网盘 FUSE 磁盘挂载"""
@@ -47,15 +47,15 @@ depends = "fuse3"
 section = "utility"
 priority = "optional"
 assets = [
-    ["target/release/PikpakDrive-fuse", "usr/bin/", "755"],
-    ["systemd.service", "etc/systemd/system/PikpakDrive-fuse.service", "644"],
+    ["target/release/Pikpak-fuse", "usr/bin/", "755"],
+    ["systemd.service", "etc/systemd/system/Pikpak-fuse.service", "644"],
 ]
 
 [package.metadata.generate-rpm]
 assets = [
-    { source = "target/release/PikpakDrive-fuse", dest = "/usr/bin/PikpakDrive-fuse", mode = "0755" },
-    { source = "LICENSE", dest = "/usr/share/doc/PikpakDrive-fuse/LICENSE", doc = true, mode = "0644" },
-    { source = "systemd.service", dest = "/etc/systemd/system/PikpakDrive-fuse.service", config = true, mode = "0644" },
+    { source = "target/release/Pikpak-fuse", dest = "/usr/bin/Pikpak-fuse", mode = "0755" },
+    { source = "LICENSE", dest = "/usr/share/doc/Pikpak-fuse/LICENSE", doc = true, mode = "0644" },
+    { source = "systemd.service", dest = "/etc/systemd/system/Pikpak-fuse.service", config = true, mode = "0644" },
 ]
 
 [package.metadata.generate-rpm.requires]

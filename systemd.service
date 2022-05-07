@@ -5,9 +5,9 @@ After=network.target
 [Service]
 Type=simple
 PermissionsStartOnly=true
-ExecStartPre=/bin/mkdir -p /var/run/PikpakDrive-fuse -p /mnt/PikpakDrive
+ExecStartPre=/bin/mkdir -p /var/run/Pikpak-fuse -p /mnt/PikpakDrive
 Environment="REFRESH_TOKEN="
-ExecStart=/usr/bin/PikpakDrive-fuse --allow-other -w /var/run/PikpakDrive-fuse /mnt/PikpakDrive
+ExecStart=/usr/bin/Pikpak-fuse --allow-other -w /var/run/Pikpak-fuse /mnt/PikpakDrive
 KillMode=process
 Restart=on-failure
 

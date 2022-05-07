@@ -7,9 +7,9 @@ RUN apk add tzdata && \
 	echo "Asia/Shanghai" > /etc/timezone && \
 	apk del tzdata
 
-RUN mkdir -p /etc/PikpakDrive-fuse /mnt/PikpakDrive
+RUN mkdir -p /etc/Pikpak-fuse /mnt/PikpakDrive
 WORKDIR /root/
-ADD PikpakDrive-fuse-$TARGETARCH$TARGETVARIANT /usr/bin/PikpakDrive-fuse
+ADD Pikpak-fuse-$TARGETARCH$TARGETVARIANT /usr/bin/Pikpak-fuse
 
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["/usr/bin/PikpakDrive-fuse", "--workdir", "/etc/PikpakDrive-fuse", "/mnt/PikpakDrive"]
+CMD ["/usr/bin/Pikpak-fuse", "--workdir", "/etc/Pikpak-fuse", "/mnt/PikpakDrive"]

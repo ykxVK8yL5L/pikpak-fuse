@@ -1,11 +1,11 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=PikpakDrive-fuse
-PKG_VERSION:=0.1.11
+PKG_NAME:=Pikpak-fuse
+PKG_VERSION:=0.1.12
 PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_LICENSE:=MIT
-PKG_MAINTAINER:=messense <messense@icloud.com>
+PKG_MAINTAINER:=ykxVK8yL5L <https://github.com/ykxVK8yL5L>
 
 PKG_LIBC:=musl
 ifeq ($(ARCH),arm)
@@ -22,26 +22,26 @@ ifeq ($(ARCH),i386)
   PKG_ARCH:=i686
 endif
 
-PKG_SOURCE:=PikpakDrive-fuse-v$(PKG_VERSION).$(PKG_ARCH)-unknown-linux-$(PKG_LIBC).tar.gz
-PKG_SOURCE_URL:=https://github.com/messense/PikpakDrive-fuse/releases/download/v$(PKG_VERSION)/
+PKG_SOURCE:=Pikpak-fuse-v$(PKG_VERSION).$(PKG_ARCH)-unknown-linux-$(PKG_LIBC).tar.gz
+PKG_SOURCE_URL:=https://github.com/ykxVK8yL5L/pikpak-fuse/releases/download/v$(PKG_VERSION)/
 PKG_HASH:=skip
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/PikpakDrive-fuse
+define Package/Pikpak-fuse
   SECTION:=multimedia
   CATEGORY:=Multimedia
   DEPENDS:=+fuse-utils
   TITLE:=FUSE for PikpakDrive
-  URL:=https://github.com/messense/PikpakDrive-fuse
+  URL:=https://github.com/ykxVK8yL5L/pikpak-fuse
 endef
 
-define Package/PikpakDrive-fuse/description
-  FUSE for PikpakDrive.
+define Package/Pikpak-fuse/description
+  FUSE for Pikpak.
 endef
 
-define Package/PikpakDrive-fuse/conffiles
-/etc/config/PikpakDrive-fuse
+define Package/Pikpak-fuse/conffiles
+/etc/config/Pikpak-fuse
 endef
 
 define Download/sha256sum
@@ -62,16 +62,16 @@ define Build/Prepare
 endef
 
 define Build/Compile
-	echo "PikpakDrive-fuse using precompiled binary."
+	echo "Pikpak-fuse using precompiled binary."
 endef
 
-define Package/PikpakDrive-fuse/install
+define Package/Pikpak-fuse/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/PikpakDrive-fuse $(1)/usr/bin/PikpakDrive-fuse
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/Pikpak-fuse $(1)/usr/bin/Pikpak-fuse
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/PikpakDrive-fuse.init $(1)/etc/init.d/PikpakDrive-fuse
+	$(INSTALL_BIN) ./files/Pikpak-fuse.init $(1)/etc/init.d/Pikpak-fuse
 	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_CONF) ./files/PikpakDrive-fuse.config $(1)/etc/config/PikpakDrive-fuse
+	$(INSTALL_CONF) ./files/Pikpak-fuse.config $(1)/etc/config/Pikpak-fuse
 endef
 
-$(eval $(call BuildPackage,PikpakDrive-fuse))
+$(eval $(call BuildPackage,Pikpak-fuse))
