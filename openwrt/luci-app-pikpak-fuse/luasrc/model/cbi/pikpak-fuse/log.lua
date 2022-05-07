@@ -4,6 +4,6 @@ log.reset = false
 
 t = log:field(DummyValue, '', '')
 t.rawhtml = true
-t.template = 'Pikpak-fuse/Pikpak-fuse_log'
+t.template = 'pikpak-fuse/pikpak-fuse_log'
 
 return log

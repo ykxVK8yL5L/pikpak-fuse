@@ -1,9 +1,9 @@
 #!/bin/sh
 
 uci -q batch <<-EOF >/dev/null
-	delete ucitrack.@Pikpak-fuse[-1]
-	add ucitrack Pikpak-fuse
-	set ucitrack.@Pikpak-fuse[-1].init=Pikpak-fuse
+	delete ucitrack.@pikpak-fuse[-1]
+	add ucitrack pikpak-fuse
+	set ucitrack.@pikpak-fuse[-1].init=pikpak-fuse
 	commit ucitrack
 EOF
 

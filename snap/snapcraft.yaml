@@ -1,8 +1,8 @@
-name: Pikpak-fuse
+name: pikpak-fuse
 version: '0.1.12'
-summary: PikPak网盘 FUSE
+summary: pikpak网盘 FUSE
 description: |
-  PikPak网盘 FUSE 磁盘挂载
+  pikpak网盘 FUSE 磁盘挂载
 
 grade: stable # must be 'stable' to release into candidate/stable channels
 confinement: strict # use 'strict' once you have the right plugs and slots
@@ -20,12 +20,12 @@ architectures:
   - build-on: armhf
 
 parts:
-  Pikpak-fuse:
+  pikpak-fuse:
     plugin: rust
     source: .
     stage-packages:
       - fuse3
 
 apps:
-  Pikpak-fuse:
-    command: bin/Pikpak-fuse
+  pikpak-fuse:
+    command: bin/pikpak-fuse

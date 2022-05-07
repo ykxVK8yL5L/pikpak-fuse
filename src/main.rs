@@ -3,8 +3,8 @@ use std::{env, io, path::PathBuf};
 use clap::Parser;
 use fuser::MountOption;
 
-use drive::{model::Credentials,PikpakDrive, DriveConfig};
-use vfs::PikpakDriveFileSystem;
+use drive::{model::Credentials,pikpakDrive, DriveConfig};
+use vfs::pikpakDriveFileSystem;
 
 
 
@@ -15,16 +15,16 @@ mod file_cache;
 mod vfs;
 
 #[derive(Parser, Debug)]
-#[clap(name = "Pikpak-fuse", about, version, author)]
+#[clap(name = "pikpak-fuse", about, version, author)]
 struct Opt {
     /// Mount point
     #[clap(parse(from_os_str))]
     path: PathBuf,
 
-    #[structopt(long, env = "PIKPAK_USER")]
+    #[structopt(long, env = "pikpak_USER")]
     pikpak_user: String,
 
-    #[structopt(long, env = "PIKPAK_PASSWORD")]
+    #[structopt(long, env = "pikpak_PASSWORD")]
     pikpak_password: String,
 
     #[structopt(long, env = "PROXY_URL", default_value = "")]
@@ -33,7 +33,7 @@ struct Opt {
     /// Working directory, refresh_token will be stored in there if specified
     #[clap(short = 'w', long)]
     workdir: Option<PathBuf>,
-    /// Pikpak PDS domain id
+    /// pikpak PDS domain id
     #[clap(long)]
     domain_id: Option<String>,
     /// Allow other users to access the drive
@@ -49,7 +49,7 @@ fn main() -> anyhow::Result<()> {
     openssl_probe::init_ssl_cert_env_vars();
 
     if env::var("RUST_LOG").is_err() {
-        env::set_var("RUST_LOG", "PikpakDrive_fuse=info");
+        env::set_var("RUST_LOG", "pikpakDrive_fuse=info");
     }
     tracing_subscriber::fmt::init();
 
@@ -76,12 +76,12 @@ fn main() -> anyhow::Result<()> {
     };
 
 
-    let drive = PikpakDrive::new(drive_config,credentials).map_err(|_| {
-        io::Error::new(io::ErrorKind::Other, "initialize PikpakDrive client failed")
+    let drive = pikpakDrive::new(drive_config,credentials).map_err(|_| {
+        io::Error::new(io::ErrorKind::Other, "initialize pikpakDrive client failed")
     })?;
 
     let _nick_name = drive.nick_name.clone();
-    let vfs = PikpakDriveFileSystem::new(drive, opt.read_buffer_size);
+    let vfs = pikpakDriveFileSystem::new(drive, opt.read_buffer_size);
     let mut mount_options = vec![MountOption::AutoUnmount, MountOption::NoAtime];
     // read only for now
     mount_options.push(MountOption::RO);
@@ -92,9 +92,9 @@ fn main() -> anyhow::Result<()> {
         mount_options.push(MountOption::CUSTOM("local".to_string()));
         mount_options.push(MountOption::CUSTOM("noappledouble".to_string()));
         let volname = if let Some(nick_name) = _nick_name {
-            format!("volname=PikPak网盘({})", nick_name)
+            format!("volname=pikpak网盘({})", nick_name)
         } else {
-            "volname=PikPak网盘".to_string()
+            "volname=pikpak网盘".to_string()
         };
         mount_options.push(MountOption::CUSTOM(volname));
     }

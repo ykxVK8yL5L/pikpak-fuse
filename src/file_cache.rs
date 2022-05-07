@@ -4,7 +4,7 @@ use bytes::Bytes;
 use tracing::debug;
 
 use crate::error::Error;
-use crate::PikpakDrive;
+use crate::pikpakDrive;
 
 #[derive(Debug)]
 struct CachedFile {
@@ -16,14 +16,14 @@ struct CachedFile {
 
 #[derive(Debug)]
 pub struct FileCache {
-    drive: PikpakDrive,
+    drive: pikpakDrive,
     read_buffer_size: usize,
     // file handle -> cached file
     cache: BTreeMap<u64, CachedFile>,
 }
 
 impl FileCache {
-    pub fn new(drive: PikpakDrive, read_buffer_size: usize) -> Self {
+    pub fn new(drive: pikpakDrive, read_buffer_size: usize) -> Self {
         Self {
             drive,
             read_buffer_size,

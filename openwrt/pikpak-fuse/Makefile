@@ -1,6 +1,6 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=Pikpak-fuse
+PKG_NAME:=pikpak-fuse
 PKG_VERSION:=0.1.12
 PKG_RELEASE:=$(AUTORELEASE)
 
@@ -22,26 +22,26 @@ ifeq ($(ARCH),i386)
   PKG_ARCH:=i686
 endif
 
-PKG_SOURCE:=Pikpak-fuse-v$(PKG_VERSION).$(PKG_ARCH)-unknown-linux-$(PKG_LIBC).tar.gz
+PKG_SOURCE:=pikpak-fuse-v$(PKG_VERSION).$(PKG_ARCH)-unknown-linux-$(PKG_LIBC).tar.gz
 PKG_SOURCE_URL:=https://github.com/ykxVK8yL5L/pikpak-fuse/releases/download/v$(PKG_VERSION)/
 PKG_HASH:=skip
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/Pikpak-fuse
+define Package/pikpak-fuse
   SECTION:=multimedia
   CATEGORY:=Multimedia
   DEPENDS:=+fuse-utils
-  TITLE:=FUSE for PikpakDrive
+  TITLE:=FUSE for pikpakDrive
   URL:=https://github.com/ykxVK8yL5L/pikpak-fuse
 endef
 
-define Package/Pikpak-fuse/description
-  FUSE for Pikpak.
+define Package/pikpak-fuse/description
+  FUSE for pikpak.
 endef
 
-define Package/Pikpak-fuse/conffiles
-/etc/config/Pikpak-fuse
+define Package/pikpak-fuse/conffiles
+/etc/config/pikpak-fuse
 endef
 
 define Download/sha256sum
@@ -62,16 +62,16 @@ define Build/Prepare
 endef
 
 define Build/Compile
-	echo "Pikpak-fuse using precompiled binary."
+	echo "pikpak-fuse using precompiled binary."
 endef
 
-define Package/Pikpak-fuse/install
+define Package/pikpak-fuse/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/Pikpak-fuse $(1)/usr/bin/Pikpak-fuse
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/pikpak-fuse $(1)/usr/bin/pikpak-fuse
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/Pikpak-fuse.init $(1)/etc/init.d/Pikpak-fuse
+	$(INSTALL_BIN) ./files/pikpak-fuse.init $(1)/etc/init.d/pikpak-fuse
 	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_CONF) ./files/Pikpak-fuse.config $(1)/etc/config/Pikpak-fuse
+	$(INSTALL_CONF) ./files/pikpak-fuse.config $(1)/etc/config/pikpak-fuse
 endef
 
-$(eval $(call BuildPackage,Pikpak-fuse))
+$(eval $(call BuildPackage,pikpak-fuse))

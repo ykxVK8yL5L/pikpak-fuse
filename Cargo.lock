@@ -3,7 +3,7 @@
 version = 3
 
 [[package]]
-name = "Pikpak-fuse"
+name = "pikpak-fuse"
 version = "0.1.12"
 dependencies = [
  "anyhow",

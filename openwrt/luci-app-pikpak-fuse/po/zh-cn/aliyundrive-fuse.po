@@ -1,8 +1,8 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8\n"
 
-msgid "PikpakDrive"
-msgstr "PikPak网盘"
+msgid "pikpakDrive"
+msgstr "pikpak网盘"
 
 
 msgid "Username"
@@ -14,8 +14,8 @@ msgstr "密码"
 msgid "Proxy Url"
 msgstr "代理地址"
 
-msgid "PikpakDrive FUSE"
-msgstr "PikPak网盘 FUSE"
+msgid "pikpakDrive FUSE"
+msgstr "pikpak网盘 FUSE"
 
 msgid "Enable"
 msgstr "启用"
@@ -47,6 +47,6 @@ msgstr "日志"
 msgid "Debug Mode"
 msgstr "调试模式"
 
-msgid "<a href=\"https://github.com/ykxVK8yL5L/Pikpak-fuse\" target=\"_blank\">Project GitHub URL</a>"
-msgstr "<a href=\"https://github.com/ykxVK8yL5L/Pikpak-fuse\" target=\"_blank\">GitHub 项目地址</a>"
+msgid "<a href=\"https://github.com/ykxVK8yL5L/pikpak-fuse\" target=\"_blank\">Project GitHub URL</a>"
+msgstr "<a href=\"https://github.com/ykxVK8yL5L/pikpak-fuse\" target=\"_blank\">GitHub 项目地址</a>"
 

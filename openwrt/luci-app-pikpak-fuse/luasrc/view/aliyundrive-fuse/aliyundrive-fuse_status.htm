@@ -1,7 +1,7 @@
 <script type="text/javascript">//<![CDATA[
-XHR.poll(3, '<%=url([[admin]], [[services]], [[Pikpak-fuse]], [[status]])%>', null,
+XHR.poll(3, '<%=url([[admin]], [[services]], [[pikpak-fuse]], [[status]])%>', null,
 	function(x, data) {
-		var tb = document.getElementById('Pikpak-fuse_status');
+		var tb = document.getElementById('pikpak-fuse_status');
 		if (data && tb) {
 			if (data.running) {
 				tb.innerHTML = '<em><b style=color:green>' + data.application + '<%:RUNNING%></b></em>';
@@ -15,7 +15,7 @@ XHR.poll(3, '<%=url([[admin]], [[services]], [[Pikpak-fuse]], [[status]])%>', nu
 </script>
 <style>.mar-10 {margin-left: 50px; margin-right: 10px;}</style>
 <fieldset class="cbi-section">
-	<p id="Pikpak-fuse_status">
+	<p id="pikpak-fuse_status">
 		<em><%:Collecting data...%></em>
 	</p>
 </fieldset>

@@ -13,7 +13,7 @@ use fuser::{
 };
 use tracing::debug;
 
-use crate::drive::{PikpakDrive, PikpakFile};
+use crate::drive::{pikpakDrive, pikpakFile};
 
 use crate::error::Error;
 use crate::file_cache::FileCache;
@@ -40,17 +40,17 @@ impl Inode {
     }
 }
 
-pub struct PikpakDriveFileSystem {
-    drive: PikpakDrive,
+pub struct pikpakDriveFileSystem {
+    drive: pikpakDrive,
     file_cache: FileCache,
-    files: BTreeMap<u64, PikpakFile>,
+    files: BTreeMap<u64, pikpakFile>,
     inodes: BTreeMap<u64, Inode>,
     next_inode: u64,
     next_fh: u64,
 }
 
-impl PikpakDriveFileSystem {
-    pub fn new(drive: PikpakDrive, read_buffer_size: usize) -> Self {
+impl pikpakDriveFileSystem {
+    pub fn new(drive: pikpakDrive, read_buffer_size: usize) -> Self {
         let file_cache = FileCache::new(drive.clone(), read_buffer_size);
         Self {
             drive,
@@ -75,7 +75,7 @@ impl PikpakDriveFileSystem {
     }
 
     fn init(&mut self) -> Result<(), Error> {
-        let mut root_file = PikpakFile::new_root();
+        let mut root_file = pikpakFile::new_root();
         // let (used_size, _) = self.drive.get_quota().map_err(|_| Error::ApiCallFailed)?;
         // root_file.size = used_size.to_string();
         let root_inode = Inode::new(0);
@@ -179,7 +179,7 @@ impl PikpakDriveFileSystem {
     }
 }
 
-impl Filesystem for PikpakDriveFileSystem {
+impl Filesystem for pikpakDriveFileSystem {
     fn init(
         &mut self,
         _req: &Request<'_>,
@@ -288,16 +288,16 @@ impl Filesystem for PikpakDriveFileSystem {
 
 // impl From<crate::drive::FileType> for FileType {
 //     fn from(typ: crate::drive::FileType) -> Self {
-//         use crate::drive::FileType as PikpakFileType;
+//         use crate::drive::FileType as pikpakFileType;
 //         match typ {
-//             PikpakFileType::Folder => FileType::Directory,
-//             PikpakFileType::File => FileType::RegularFile,
+//             pikpakFileType::Folder => FileType::Directory,
+//             pikpakFileType::File => FileType::RegularFile,
 //         }
 //     }
 // }
 
 
-impl PikpakFile {
+impl pikpakFile {
     fn to_file_attr(&self, ino: u64) -> FileAttr {
         //let kind = self.kind.into();
         let kind = if self.kind.eq("drive#folder"){

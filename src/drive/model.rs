@@ -42,7 +42,7 @@ pub struct ListFileRequest<'a> {
 pub struct ListFileResponse {
     pub kind : String,
     pub next_page_token : String,
-    pub files: Vec<PikpakFile>,
+    pub files: Vec<pikpakFile>,
 }
 
 
@@ -102,7 +102,7 @@ impl ops::Deref for DateTime {
 }
 
 #[derive(Debug, Clone,Serialize, Deserialize)]
-pub struct PikpakFile {
+pub struct pikpakFile {
     pub kind: String,
     pub id: String,
     pub parent_id: String,
@@ -131,11 +131,11 @@ pub struct Media {
 pub struct FilesList {
     pub kind : String,
     pub next_page_token : String,
-    pub files: Vec<PikpakFile>,
+    pub files: Vec<pikpakFile>,
 }
 
 
-impl PikpakFile {
+impl pikpakFile {
     pub fn new_root() -> Self {
         let now = SystemTime::now();
         Self {
