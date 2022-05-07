@@ -1,5 +1,5 @@
 name: pikpak-fuse
-version: '0.1.12'
+version: '0.1.13'
 summary: pikpak网盘 FUSE
 description: |
   pikpak网盘 FUSE 磁盘挂载

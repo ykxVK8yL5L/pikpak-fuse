@@ -48,12 +48,12 @@ sudo snap install pikpak-fuse
 aarch64/arm/x86_64/i686 等架构的版本，可以下载后使用 opkg 安装，以 nanopi r4s 为例：
 
 ```bash
-wget https://github.com/ykxVK8yL5L/pikpak-fuse/releases/download/v0.1.12/pikpak-fuse_0.1.12-1_aarch64_generic.ipk
-wget https://github.com/ykxVK8yL5L/pikpak-fuse/releases/download/v0.1.12/luci-app-pikpak-fuse_0.1.12_all.ipk
-wget https://github.com/ykxVK8yL5L/pikpak-fuse/releases/download/v0.1.12/luci-i18n-pikpak-fuse-zh-cn_0.1.12-1_all.ipk
-opkg install pikpak-fuse_0.1.12-1_aarch64_generic.ipk
-opkg install luci-app-pikpak-fuse_0.1.12_all.ipk
-opkg install luci-i18n-pikpak-fuse-zh-cn_0.1.12-1_all.ipk
+wget https://github.com/ykxVK8yL5L/pikpak-fuse/releases/download/v0.1.13/pikpak-fuse_0.1.13-1_aarch64_generic.ipk
+wget https://github.com/ykxVK8yL5L/pikpak-fuse/releases/download/v0.1.13/luci-app-pikpak-fuse_0.1.13_all.ipk
+wget https://github.com/ykxVK8yL5L/pikpak-fuse/releases/download/v0.1.13/luci-i18n-pikpak-fuse-zh-cn_0.1.13-1_all.ipk
+opkg install pikpak-fuse_0.1.13-1_aarch64_generic.ipk
+opkg install luci-app-pikpak-fuse_0.1.13_all.ipk
+opkg install luci-i18n-pikpak-fuse-zh-cn_0.1.13-1_all.ipk
 ```
 
 其它 CPU 架构的路由器可在 [GitHub Releases](https://github.com/ykxVK8yL5L/pikpak-fuse/releases) 页面中查找对应的架构的主程序 ipk 文件下载安装。
