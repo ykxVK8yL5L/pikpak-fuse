@@ -1,9 +1,9 @@
 #!/bin/sh
 
 uci -q batch <<-EOF >/dev/null
-	delete ucitrack.@aliyundrive-fuse[-1]
-	add ucitrack aliyundrive-fuse
-	set ucitrack.@aliyundrive-fuse[-1].init=aliyundrive-fuse
+	delete ucitrack.@PikpakDrive-fuse[-1]
+	add ucitrack PikpakDrive-fuse
+	set ucitrack.@PikpakDrive-fuse[-1].init=PikpakDrive-fuse
 	commit ucitrack
 EOF
 

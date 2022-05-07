@@ -4,6 +4,6 @@ log.reset = false
 
 t = log:field(DummyValue, '', '')
 t.rawhtml = true
-t.template = 'aliyundrive-fuse/aliyundrive-fuse_log'
+t.template = 'PikpakDrive-fuse/PikpakDrive-fuse_log'
 
 return log

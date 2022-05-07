@@ -1,11 +1,11 @@
 {
-	"luci-app-aliyundrive-fuse": {
-		"description": "Grant UCI access for luci-app-aliyundrive-fuse",
+	"luci-app-PikpakDrive-fuse": {
+		"description": "Grant UCI access for luci-app-PikpakDrive-fuse",
 		"read": {
-			"uci": [ "aliyundrive-fuse" ]
+			"uci": [ "PikpakDrive-fuse" ]
 		},
 		"write": {
-			"uci": [ "aliyundrive-fuse" ]
+			"uci": [ "PikpakDrive-fuse" ]
 		}
 	}
 }

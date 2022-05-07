@@ -16,13 +16,13 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use tracing::{debug, error, info, warn};
 
-mod model;
+pub mod model;
 
-use model::*;
-pub use model::{AliyunFile, DateTime, FileType};
+pub use model::*;
+pub use model::{PikpakFile, DateTime, FileType};
 
-const ORIGIN: &str = "https://www.aliyundrive.com";
-const REFERER: &str = "https://www.aliyundrive.com/";
+const ORIGIN: &str = "https://api-drive.mypikpak.com/drive/v1/files";
+const REFERER: &str = "https://api-drive.mypikpak.com/drive/v1/files";
 const UA: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36";
 
 #[derive(Debug, Clone)]
@@ -30,17 +30,13 @@ pub struct DriveConfig {
     pub api_base_url: String,
     pub refresh_token_url: String,
     pub workdir: Option<PathBuf>,
-    pub app_id: Option<String>,
 }
 
-#[derive(Debug, Clone)]
-struct Credentials {
-    refresh_token: String,
-    access_token: Option<String>,
-}
+
+
 
 #[derive(Debug, Clone)]
-pub struct AliyunDrive {
+pub struct PikpakDrive {
     config: DriveConfig,
     client: reqwest::blocking::Client,
     credentials: Arc<RwLock<Credentials>>,
@@ -48,12 +44,12 @@ pub struct AliyunDrive {
     pub nick_name: Option<String>,
 }
 
-impl AliyunDrive {
-    pub fn new(config: DriveConfig, refresh_token: String) -> Result<Self> {
-        let credentials = Credentials {
-            refresh_token,
-            access_token: None,
-        };
+impl PikpakDrive {
+    pub fn new(config: DriveConfig, credentials:Credentials) -> Result<Self> {
+        // let credentials = Credentials {
+        //     refresh_token,
+        //     access_token: None,
+        // };
         let mut headers = HeaderMap::new();
         headers.insert("Origin", HeaderValue::from_static(ORIGIN));
         headers.insert("Referer", HeaderValue::from_static(REFERER));
@@ -89,7 +85,7 @@ impl AliyunDrive {
                 Ok(res) => {
                     // token usually expires in 7200s, refresh earlier
                     delay_seconds = res.expires_in - 200;
-                    if tx.send((res.default_drive_id, res.nick_name)).is_err() {
+                    if tx.send((res.access_token, res.token_type)).is_err() {
                         error!("send default drive id failed");
                     }
                 }
@@ -110,7 +106,7 @@ impl AliyunDrive {
         if drive_id.is_empty() {
             bail!("get default drive id failed");
         }
-        info!(drive_id = %drive_id, "found default drive");
+        //info!(drive_id = %drive_id, "found default drive");
         drive.drive_id = Some(drive_id);
         drive.nick_name = Some(nick_name);
 
@@ -126,13 +122,14 @@ impl AliyunDrive {
         Ok(())
     }
 
-    fn do_refresh_token(&self, refresh_token: &str) -> Result<RefreshTokenResponse> {
+    fn do_refresh_token(&self, user_name: &str,password: &str) -> Result<RefreshTokenResponse> {
         let mut data = HashMap::new();
-        data.insert("refresh_token", refresh_token);
-        data.insert("grant_type", "refresh_token");
-        if let Some(app_id) = self.config.app_id.as_ref() {
-            data.insert("app_id", app_id);
-        }
+        data.insert("captcha_token", "");
+        data.insert("client_id", "YNxT9w7GMdWvEOKa");
+        data.insert("client_secret", "dbw2OtmVEeuUvIptb1Coyg");
+        data.insert("username", user_name);
+        data.insert("password", password);
+
         let res = self
             .client
             .post(&self.config.refresh_token_url)
@@ -142,8 +139,7 @@ impl AliyunDrive {
             Ok(_) => {
                 let res = res.json::<RefreshTokenResponse>()?;
                 info!(
-                    refresh_token = %res.refresh_token,
-                    nick_name = %res.nick_name,
+                    refresh_token = %res.access_token,
                     "refresh token succeed"
                 );
                 Ok(res)
@@ -162,13 +158,21 @@ impl AliyunDrive {
     ) -> Result<RefreshTokenResponse> {
         let mut last_err = None;
         let mut refresh_token = self.refresh_token();
+
+        let user_name = self.user_name();
+        let password = self.password();
         for _ in 0..10 {
-            match self.do_refresh_token(&refresh_token) {
+            match self.do_refresh_token(&user_name,&password) {
                 Ok(res) => {
-                    let mut cred = self.credentials.write();
-                    cred.refresh_token = res.refresh_token.clone();
-                    cred.access_token = Some(res.access_token.clone());
-                    if let Err(err) = self.save_refresh_token(&res.refresh_token) {
+                    // let mut cred = self.credentials.write();
+                    // cred.refresh_token = res.refresh_token.clone();
+                    // cred.access_token = Some(res.access_token.clone());
+                    // info!(
+                    //     refresh_token = %res.access_token,
+                    //     "get token succeed"
+                    // );
+
+                    if let Err(err) = self.save_refresh_token(&res.access_token) {
                         error!(error = %err, "save refresh token failed");
                     }
                     return Ok(res);
@@ -210,14 +214,34 @@ impl AliyunDrive {
         Err(last_err.unwrap())
     }
 
-    fn refresh_token(&self) -> String {
+
+    fn user_name(&self) -> String {
         let cred = self.credentials.read();
-        cred.refresh_token.clone()
+        cred.username.clone()
+    }
+
+    fn password(&self) -> String {
+        let cred = self.credentials.read();
+        cred.password.clone()
+    }
+
+    fn refresh_token(&self) -> String {
+        // let refresh_token_from_file = if let Some(dir) = self.config.workdir.as_ref() {
+        //     fs::read_to_string(dir.join("refresh_token")).ok()
+        // } else {
+        //     None
+        // };
+        // refresh_token_from_file.unwrap().trim().to_string()
+        "".to_string()
     }
 
     fn access_token(&self) -> Result<String> {
-        let cred = self.credentials.read();
-        cred.access_token.clone().context("missing access_token")
+        let refresh_token_from_file = if let Some(dir) = self.config.workdir.as_ref() {
+            fs::read_to_string(dir.join("refresh_token")).ok()
+        } else {
+            None
+        };
+        Ok(refresh_token_from_file.unwrap().trim().to_string())
     }
 
     fn drive_id(&self) -> Result<&str> {
@@ -233,7 +257,7 @@ impl AliyunDrive {
         let url = reqwest::Url::parse(&url)?;
         let res = self
             .client
-            .post(url.clone())
+            .get(url.clone())
             .bearer_auth(&access_token)
             .json(&req)
             .send()?
@@ -289,38 +313,28 @@ impl AliyunDrive {
         }
     }
 
-    pub fn list_all(&self, parent_file_id: &str) -> Result<Vec<AliyunFile>> {
+    pub fn list_all(&self, parent_file_id: &str) -> Result<Vec<PikpakFile>> {
         let mut files = Vec::new();
         let mut marker = None;
         loop {
             let res = self.list(parent_file_id, marker.as_deref())?;
-            files.extend(res.items.into_iter());
-            if res.next_marker.is_empty() {
+            println!("drive list  result is:{:?}",res);
+            files.extend(res.files.into_iter());
+            if res.next_page_token.is_empty() {
                 break;
             }
-            marker = Some(res.next_marker);
+            marker = Some(res.next_page_token);
         }
         Ok(files)
     }
 
     pub fn list(&self, parent_file_id: &str, marker: Option<&str>) -> Result<ListFileResponse> {
         let drive_id = self.drive_id()?;
-        debug!(drive_id = %drive_id, parent_file_id = %parent_file_id, marker = ?marker, "list file");
-        let req = ListFileRequest {
-            drive_id,
-            parent_file_id,
-            limit: 200,
-            all: false,
-            image_thumbnail_process: "image/resize,w_400/format,jpeg",
-            image_url_process: "image/resize,w_1920/format,jpeg",
-            video_thumbnail_process: "video/snapshot,t_0,f_jpg,ar_auto,w_300",
-            fields: "*",
-            order_by: "updated_at",
-            order_direction: "DESC",
-            marker,
-        };
-        self.request(format!("{}/v2/file/list", self.config.api_base_url), &req)
-            .and_then(|res| res.context("expect response"))
+        let pagetoken = marker.unwrap_or("");
+        let mut data = HashMap::new();
+        data.insert("parent_id", parent_file_id);
+        let mut rurl = format!("{}?parent_id={}&thumbnail_size=SIZE_LARGE&with_audit=true&page_token={}&limit=0&filters={{\"phase\":{{\"eq\":\"PHASE_TYPE_COMPLETE\"}},\"trashed\":{{\"eq\":false}}}}",self.config.api_base_url,&parent_file_id,pagetoken);
+        self.request(rurl, &data).and_then(|res| res.context("expect response"))
     }
 
     pub fn download(&self, url: &str, start_pos: u64, size: usize) -> Result<Bytes> {
@@ -340,17 +354,28 @@ impl AliyunDrive {
 
     pub fn get_download_url(&self, file_id: &str) -> Result<String> {
         debug!(file_id = %file_id, "get download url");
-        let req = GetFileDownloadUrlRequest {
-            drive_id: self.drive_id()?,
-            file_id,
-        };
-        let res: GetFileDownloadUrlResponse = self
-            .request(
-                format!("{}/v2/file/get_download_url", self.config.api_base_url),
-                &req,
-            )?
-            .context("expect response")?;
-        Ok(res.url)
+        // let req = GetFileDownloadUrlRequest {
+        //     drive_id: self.drive_id()?,
+        //     file_id,
+        // };
+        // let res: GetFileDownloadUrlResponse = self
+        //     .request(
+        //         format!("{}/v2/file/get_download_url", self.config.api_base_url),
+        //         &req,
+        //     )?
+        //     .context("expect response")?;
+
+        let mut rurl = format!("{}/{}",self.config.api_base_url,file_id.to_string());
+        let url = rurl;
+        let mut data = HashMap::new();
+        data.insert("file_id", file_id);
+        let res: PikpakFile = self.request(url,&data)?.context("expect response")?;
+        
+        if res.mime_type.contains("video/"){
+            Ok(res.medias[0].link.url.clone())
+        }else{
+            Ok(res.web_content_link.clone())
+        }
     }
 
     pub fn get_quota(&self) -> Result<(u64, u64)> {

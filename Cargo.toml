@@ -1,11 +1,11 @@
 [package]
-name = "aliyundrive-fuse"
+name = "PikpakDrive-fuse"
 version = "0.1.11"
 edition = "2021"
-description = "FUSE for AliyunDrive"
+description = "FUSE for PikpakDrive"
 license = "MIT"
-homepage = "https://github.com/messense/aliyundrive-fuse"
-repository = "https://github.com/messense/aliyundrive-fuse.git"
+homepage = "https://github.com/messense/PikpakDrive-fuse"
+repository = "https://github.com/messense/PikpakDrive-fuse.git"
 readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -42,20 +42,20 @@ maintainer = "messense <messense@icloud.com>"
 copyright = "2021-present, messense <messense@icloud.com>"
 license-file = ["LICENSE", "4"]
 extended-description = """\
-阿里云盘 FUSE 磁盘挂载"""
+PikPak网盘 FUSE 磁盘挂载"""
 depends = "fuse3"
 section = "utility"
 priority = "optional"
 assets = [
-    ["target/release/aliyundrive-fuse", "usr/bin/", "755"],
-    ["systemd.service", "etc/systemd/system/aliyundrive-fuse.service", "644"],
+    ["target/release/PikpakDrive-fuse", "usr/bin/", "755"],
+    ["systemd.service", "etc/systemd/system/PikpakDrive-fuse.service", "644"],
 ]
 
 [package.metadata.generate-rpm]
 assets = [
-    { source = "target/release/aliyundrive-fuse", dest = "/usr/bin/aliyundrive-fuse", mode = "0755" },
-    { source = "LICENSE", dest = "/usr/share/doc/aliyundrive-fuse/LICENSE", doc = true, mode = "0644" },
-    { source = "systemd.service", dest = "/etc/systemd/system/aliyundrive-fuse.service", config = true, mode = "0644" },
+    { source = "target/release/PikpakDrive-fuse", dest = "/usr/bin/PikpakDrive-fuse", mode = "0755" },
+    { source = "LICENSE", dest = "/usr/share/doc/PikpakDrive-fuse/LICENSE", doc = true, mode = "0644" },
+    { source = "systemd.service", dest = "/etc/systemd/system/PikpakDrive-fuse.service", config = true, mode = "0644" },
 ]
 
 [package.metadata.generate-rpm.requires]

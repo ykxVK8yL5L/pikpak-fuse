@@ -1,6 +1,6 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=aliyundrive-fuse
+PKG_NAME:=PikpakDrive-fuse
 PKG_VERSION:=0.1.11
 PKG_RELEASE:=$(AUTORELEASE)
 
@@ -22,26 +22,26 @@ ifeq ($(ARCH),i386)
   PKG_ARCH:=i686
 endif
 
-PKG_SOURCE:=aliyundrive-fuse-v$(PKG_VERSION).$(PKG_ARCH)-unknown-linux-$(PKG_LIBC).tar.gz
-PKG_SOURCE_URL:=https://github.com/messense/aliyundrive-fuse/releases/download/v$(PKG_VERSION)/
+PKG_SOURCE:=PikpakDrive-fuse-v$(PKG_VERSION).$(PKG_ARCH)-unknown-linux-$(PKG_LIBC).tar.gz
+PKG_SOURCE_URL:=https://github.com/messense/PikpakDrive-fuse/releases/download/v$(PKG_VERSION)/
 PKG_HASH:=skip
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/aliyundrive-fuse
+define Package/PikpakDrive-fuse
   SECTION:=multimedia
   CATEGORY:=Multimedia
   DEPENDS:=+fuse-utils
-  TITLE:=FUSE for AliyunDrive
-  URL:=https://github.com/messense/aliyundrive-fuse
+  TITLE:=FUSE for PikpakDrive
+  URL:=https://github.com/messense/PikpakDrive-fuse
 endef
 
-define Package/aliyundrive-fuse/description
-  FUSE for AliyunDrive.
+define Package/PikpakDrive-fuse/description
+  FUSE for PikpakDrive.
 endef
 
-define Package/aliyundrive-fuse/conffiles
-/etc/config/aliyundrive-fuse
+define Package/PikpakDrive-fuse/conffiles
+/etc/config/PikpakDrive-fuse
 endef
 
 define Download/sha256sum
@@ -62,16 +62,16 @@ define Build/Prepare
 endef
 
 define Build/Compile
-	echo "aliyundrive-fuse using precompiled binary."
+	echo "PikpakDrive-fuse using precompiled binary."
 endef
 
-define Package/aliyundrive-fuse/install
+define Package/PikpakDrive-fuse/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/aliyundrive-fuse $(1)/usr/bin/aliyundrive-fuse
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/PikpakDrive-fuse $(1)/usr/bin/PikpakDrive-fuse
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/aliyundrive-fuse.init $(1)/etc/init.d/aliyundrive-fuse
+	$(INSTALL_BIN) ./files/PikpakDrive-fuse.init $(1)/etc/init.d/PikpakDrive-fuse
 	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_CONF) ./files/aliyundrive-fuse.config $(1)/etc/config/aliyundrive-fuse
+	$(INSTALL_CONF) ./files/PikpakDrive-fuse.config $(1)/etc/config/PikpakDrive-fuse
 endef
 
-$(eval $(call BuildPackage,aliyundrive-fuse))
+$(eval $(call BuildPackage,PikpakDrive-fuse))

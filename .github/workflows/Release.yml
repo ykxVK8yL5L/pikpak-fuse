@@ -43,7 +43,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: apple-darwin-bin
-          path: target/x86_64-apple-darwin/release/aliyundrive-fuse
+          path: target/x86_64-apple-darwin/release/PikpakDrive-fuse
           if-no-files-found: error
       - name: Get tag
         if: "startsWith(github.ref, 'refs/tags/')"
@@ -53,15 +53,15 @@ jobs:
         if: "startsWith(github.ref, 'refs/tags/')"
         run: |
           cd target/x86_64-apple-darwin/release
-          tar czvf aliyundrive-fuse-${{ steps.tag.outputs.tag }}.apple-darwin.tar.gz aliyundrive-fuse
-          shasum -a 256 aliyundrive-fuse-${{ steps.tag.outputs.tag }}.apple-darwin.tar.gz > aliyundrive-fuse-${{ steps.tag.outputs.tag }}.apple-darwin.tar.gz.sha256
+          tar czvf PikpakDrive-fuse-${{ steps.tag.outputs.tag }}.apple-darwin.tar.gz PikpakDrive-fuse
+          shasum -a 256 PikpakDrive-fuse-${{ steps.tag.outputs.tag }}.apple-darwin.tar.gz > PikpakDrive-fuse-${{ steps.tag.outputs.tag }}.apple-darwin.tar.gz.sha256
           cd -
       - name: Upload binary to GitHub Release
         uses: svenstaro/upload-release-action@v2
         if: "startsWith(github.ref, 'refs/tags/')"
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/x86_64-apple-darwin/release/aliyundrive-fuse*.tar.gz
+          file: target/x86_64-apple-darwin/release/PikpakDrive-fuse*.tar.gz
           file_glob: true
           overwrite: true
           tag: ${{ github.ref }}
@@ -126,26 +126,26 @@ jobs:
         uses: crazy-max/ghaction-upx@v1
         with:
           version: latest
-          files: target/${{ matrix.platform.target }}/release/aliyundrive-fuse
+          files: target/${{ matrix.platform.target }}/release/PikpakDrive-fuse
       - name: Upload binary artifacts
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.platform.target }}-bin
-          path: target/${{ matrix.platform.target }}/release/aliyundrive-fuse
+          path: target/${{ matrix.platform.target }}/release/PikpakDrive-fuse
           if-no-files-found: error
       - name: Upload deb artifacts
         if: matrix.platform.deb
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.platform.target }}-deb
-          path: target/${{ matrix.platform.target }}/debian/aliyundrive-fuse_*.deb
+          path: target/${{ matrix.platform.target }}/debian/PikpakDrive-fuse_*.deb
           if-no-files-found: error
       - name: Upload RPM artifacts
         if: matrix.platform.deb
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.platform.target }}-rpm
-          path: target/${{ matrix.platform.target }}/generate-rpm/aliyundrive-fuse*.rpm
+          path: target/${{ matrix.platform.target }}/generate-rpm/PikpakDrive-fuse*.rpm
           if-no-files-found: error
       - name: Get tag
         if: "startsWith(github.ref, 'refs/tags/')"
@@ -155,15 +155,15 @@ jobs:
         if: "startsWith(github.ref, 'refs/tags/')"
         run: |
           cd target/${{ matrix.platform.target }}/release
-          tar czvf aliyundrive-fuse-${{ steps.tag.outputs.tag }}.${{ matrix.platform.target }}.tar.gz aliyundrive-fuse
-          shasum -a 256 aliyundrive-fuse-${{ steps.tag.outputs.tag }}.${{ matrix.platform.target }}.tar.gz > aliyundrive-fuse-${{ steps.tag.outputs.tag }}.${{ matrix.platform.target }}.tar.gz.sha256
+          tar czvf PikpakDrive-fuse-${{ steps.tag.outputs.tag }}.${{ matrix.platform.target }}.tar.gz PikpakDrive-fuse
+          shasum -a 256 PikpakDrive-fuse-${{ steps.tag.outputs.tag }}.${{ matrix.platform.target }}.tar.gz > PikpakDrive-fuse-${{ steps.tag.outputs.tag }}.${{ matrix.platform.target }}.tar.gz.sha256
           cd -
       - name: Upload binary to GitHub Release
         uses: svenstaro/upload-release-action@v2
         if: "startsWith(github.ref, 'refs/tags/')"
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/${{ matrix.platform.target }}/release/aliyundrive-fuse*.tar.gz*
+          file: target/${{ matrix.platform.target }}/release/PikpakDrive-fuse*.tar.gz*
           file_glob: true
           overwrite: true
           tag: ${{ github.ref }}
@@ -172,7 +172,7 @@ jobs:
         if: "startsWith(github.ref, 'refs/tags/') && matrix.platform.deb"
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/${{ matrix.platform.target }}/debian/aliyundrive-fuse_*.deb
+          file: target/${{ matrix.platform.target }}/debian/PikpakDrive-fuse_*.deb
           file_glob: true
           overwrite: true
           tag: ${{ github.ref }}
@@ -181,7 +181,7 @@ jobs:
         if: "startsWith(github.ref, 'refs/tags/') && matrix.platform.deb"
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/${{ matrix.platform.target }}/generate-rpm/aliyundrive-fuse*.rpm
+          file: target/${{ matrix.platform.target }}/generate-rpm/PikpakDrive-fuse*.rpm
           file_glob: true
           overwrite: true
           tag: ${{ github.ref }}
@@ -230,31 +230,31 @@ jobs:
           mv -f openwrt-sdk-* openwrt-sdk
       - name: Build Package
         run: |
-          echo "src-link aliyundrive $GITHUB_WORKSPACE/openwrt" > openwrt-sdk/feeds.conf
-          echo 'CONFIG_PACKAGE_aliyundrive-fuse=y
-          CONFIG_PACKAGE_luci-app-aliyundrive-fuse=y
+          echo "src-link PikpakDrive $GITHUB_WORKSPACE/openwrt" > openwrt-sdk/feeds.conf
+          echo 'CONFIG_PACKAGE_PikpakDrive-fuse=y
+          CONFIG_PACKAGE_luci-app-PikpakDrive-fuse=y
           ' >> openwrt-sdk/.config
           cd openwrt-sdk
           cat feeds.conf.default >> feeds.conf
           cat feeds.conf
           ./scripts/feeds update -a > /dev/null
           make defconfig
-          ./scripts/feeds install -d y -p "aliyundrive" -f -a
-          make package/aliyundrive-fuse/compile V=s
-          make package/luci-app-aliyundrive-fuse/compile V=s
+          ./scripts/feeds install -d y -p "PikpakDrive" -f -a
+          make package/PikpakDrive-fuse/compile V=s
+          make package/luci-app-PikpakDrive-fuse/compile V=s
           tree bin/packages/
       - name: Archive package
         uses: actions/upload-artifact@v2
         with:
-          name: aliyundrive-fuse-openwrt-${{ matrix.target.arch }}
-          path: openwrt-sdk/bin/packages/*/aliyundrive/aliyundrive-fuse*.ipk
+          name: PikpakDrive-fuse-openwrt-${{ matrix.target.arch }}
+          path: openwrt-sdk/bin/packages/*/PikpakDrive/PikpakDrive-fuse*.ipk
           if-no-files-found: error
       - name: Archive luci packages
         uses: actions/upload-artifact@v2
         if: ${{ matrix.target.arch == 'aarch64_generic' }}
         with:
-          name: aliyundrive-fuse-openwrt-${{ matrix.target.arch }}
-          path: openwrt-sdk/bin/packages/*/aliyundrive/luci-*.ipk
+          name: PikpakDrive-fuse-openwrt-${{ matrix.target.arch }}
+          path: openwrt-sdk/bin/packages/*/PikpakDrive/luci-*.ipk
           if-no-files-found: error
       - name: Upload package to GitHub Release
         uses: svenstaro/upload-release-action@v2
@@ -263,7 +263,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file_glob: true
           overwrite: true
-          file: openwrt-sdk/bin/packages/*/aliyundrive/aliyundrive-fuse*.ipk
+          file: openwrt-sdk/bin/packages/*/PikpakDrive/PikpakDrive-fuse*.ipk
           tag: ${{ github.ref }}
       - name: Upload luci packages to GitHub Release
         uses: svenstaro/upload-release-action@v2
@@ -272,7 +272,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file_glob: true
           overwrite: true
-          file: openwrt-sdk/bin/packages/*/aliyundrive/luci-*.ipk
+          file: openwrt-sdk/bin/packages/*/PikpakDrive/luci-*.ipk
           tag: ${{ github.ref }}
 
   docker:
@@ -286,37 +286,37 @@ jobs:
         with:
           name: x86_64-unknown-linux-musl-bin
       - run: |
-          chmod a+x aliyundrive-fuse
-          mv aliyundrive-fuse aliyundrive-fuse-amd64
+          chmod a+x PikpakDrive-fuse
+          mv PikpakDrive-fuse PikpakDrive-fuse-amd64
       - uses: actions/download-artifact@v2
         with:
           name: i686-unknown-linux-musl-bin
       - run: |
-          chmod a+x aliyundrive-fuse
-          mv aliyundrive-fuse aliyundrive-fuse-386
+          chmod a+x PikpakDrive-fuse
+          mv PikpakDrive-fuse PikpakDrive-fuse-386
       - uses: actions/download-artifact@v2
         with:
           name: aarch64-unknown-linux-musl-bin
       - run: |
-          chmod a+x aliyundrive-fuse
-          mv aliyundrive-fuse aliyundrive-fuse-arm64
+          chmod a+x PikpakDrive-fuse
+          mv PikpakDrive-fuse PikpakDrive-fuse-arm64
       - uses: actions/download-artifact@v2
         with:
           name: armv7-unknown-linux-musleabihf-bin
       - run: |
-          chmod a+x aliyundrive-fuse
-          mv aliyundrive-fuse aliyundrive-fuse-armv7
+          chmod a+x PikpakDrive-fuse
+          mv PikpakDrive-fuse PikpakDrive-fuse-armv7
       - uses: actions/download-artifact@v2
         with:
           name: arm-unknown-linux-musleabihf-bin
       - run: |
-          chmod a+x aliyundrive-fuse
-          mv aliyundrive-fuse aliyundrive-fuse-armv6
+          chmod a+x PikpakDrive-fuse
+          mv PikpakDrive-fuse PikpakDrive-fuse-armv6
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v3
         with:
-          images: messense/aliyundrive-fuse
+          images: messense/PikpakDrive-fuse
           tags: |
             type=schedule
             type=ref,event=branch
@@ -349,7 +349,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: PyPI
-      url: https://pypi.org/project/aliyundrive-fuse/
+      url: https://pypi.org/project/PikpakDrive-fuse/
     if: "startsWith(github.ref, 'refs/tags/')"
     needs: [ linux, macos ]
     steps:

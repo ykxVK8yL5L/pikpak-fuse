@@ -13,7 +13,8 @@ use fuser::{
 };
 use tracing::debug;
 
-use crate::drive::{AliyunDrive, AliyunFile};
+use crate::drive::{PikpakDrive, PikpakFile};
+
 use crate::error::Error;
 use crate::file_cache::FileCache;
 
@@ -39,17 +40,17 @@ impl Inode {
     }
 }
 
-pub struct AliyunDriveFileSystem {
-    drive: AliyunDrive,
+pub struct PikpakDriveFileSystem {
+    drive: PikpakDrive,
     file_cache: FileCache,
-    files: BTreeMap<u64, AliyunFile>,
+    files: BTreeMap<u64, PikpakFile>,
     inodes: BTreeMap<u64, Inode>,
     next_inode: u64,
     next_fh: u64,
 }
 
-impl AliyunDriveFileSystem {
-    pub fn new(drive: AliyunDrive, read_buffer_size: usize) -> Self {
+impl PikpakDriveFileSystem {
+    pub fn new(drive: PikpakDrive, read_buffer_size: usize) -> Self {
         let file_cache = FileCache::new(drive.clone(), read_buffer_size);
         Self {
             drive,
@@ -74,9 +75,9 @@ impl AliyunDriveFileSystem {
     }
 
     fn init(&mut self) -> Result<(), Error> {
-        let mut root_file = AliyunFile::new_root();
-        let (used_size, _) = self.drive.get_quota().map_err(|_| Error::ApiCallFailed)?;
-        root_file.size = used_size;
+        let mut root_file = PikpakFile::new_root();
+        // let (used_size, _) = self.drive.get_quota().map_err(|_| Error::ApiCallFailed)?;
+        // root_file.size = used_size.to_string();
         let root_inode = Inode::new(0);
         self.inodes.insert(FUSE_ROOT_ID, root_inode);
         self.files.insert(FUSE_ROOT_ID, root_file);
@@ -110,11 +111,9 @@ impl AliyunDriveFileSystem {
     fn readdir(&mut self, ino: u64, offset: i64) -> Result<Vec<(u64, FileType, String)>, Error> {
         let mut entries = Vec::new();
         let mut inode = self.inodes.get(&ino).ok_or(Error::NoEntry)?.clone();
-
         if offset == 0 {
             entries.push((ino, FileType::Directory, ".".to_string()));
             entries.push((inode.parent, FileType::Directory, String::from("..")));
-
             let file = self.files.get(&ino).ok_or(Error::NoEntry)?;
             let parent_file_id = &file.id;
             let files = self
@@ -158,7 +157,13 @@ impl AliyunDriveFileSystem {
 
         for child_ino in inode.children.values().skip(offset as usize) {
             let file = self.files.get(child_ino).ok_or(Error::ChildNotFound)?;
-            entries.push((*child_ino, file.r#type.into(), file.name.clone()));
+            let kind = if file.kind.eq("drive#folder"){
+                FileType::Directory
+            }else{
+                FileType::RegularFile
+            };
+
+            entries.push((*child_ino, kind, file.name.clone()));
         }
         Ok(entries)
     }
@@ -166,15 +171,15 @@ impl AliyunDriveFileSystem {
     fn read(&mut self, ino: u64, fh: u64, offset: i64, size: u32) -> Result<Bytes, Error> {
         let file = self.files.get(&ino).ok_or(Error::NoEntry)?;
         debug!(inode = ino, name = %file.name, fh = fh, offset = offset, size = size, "read");
-        if offset >= file.size as i64 {
+        if offset >= file.size.parse::<i64>().unwrap() {
             return Ok(Bytes::new());
         }
-        let size = std::cmp::min(size, file.size.saturating_sub(offset as u64) as u32);
+        let size = std::cmp::min(size, file.size.parse::<u64>().unwrap().saturating_sub(offset as u64) as u32);
         self.file_cache.read(fh, offset, size)
     }
 }
 
-impl Filesystem for AliyunDriveFileSystem {
+impl Filesystem for PikpakDriveFileSystem {
     fn init(
         &mut self,
         _req: &Request<'_>,
@@ -236,7 +241,7 @@ impl Filesystem for AliyunDriveFileSystem {
         if let Some((file_id, file_name, file_size)) = self
             .files
             .get(&ino)
-            .map(|f| (f.id.clone(), f.name.clone(), f.size))
+            .map(|f| (f.id.clone(), f.name.clone(), f.size.parse::<u64>().unwrap()))
         {
             debug!(inode = ino, name = %file_name, "open file");
             let fh = self.next_fh();
@@ -281,20 +286,27 @@ impl Filesystem for AliyunDriveFileSystem {
     }
 }
 
-impl From<crate::drive::FileType> for FileType {
-    fn from(typ: crate::drive::FileType) -> Self {
-        use crate::drive::FileType as AliyunFileType;
+// impl From<crate::drive::FileType> for FileType {
+//     fn from(typ: crate::drive::FileType) -> Self {
+//         use crate::drive::FileType as PikpakFileType;
+//         match typ {
+//             PikpakFileType::Folder => FileType::Directory,
+//             PikpakFileType::File => FileType::RegularFile,
+//         }
+//     }
+// }
 
-        match typ {
-            AliyunFileType::Folder => FileType::Directory,
-            AliyunFileType::File => FileType::RegularFile,
-        }
-    }
-}
 
-impl AliyunFile {
+impl PikpakFile {
     fn to_file_attr(&self, ino: u64) -> FileAttr {
-        let kind = self.r#type.into();
+        //let kind = self.kind.into();
+        let kind = if self.kind.eq("drive#folder"){
+            FileType::Directory
+        }else{
+            FileType::RegularFile
+        };
+        
+    
         let perm = if matches!(kind, FileType::Directory) {
             0o755
         } else {
@@ -304,15 +316,15 @@ impl AliyunFile {
         let uid = unsafe { libc::getuid() };
         let gid = unsafe { libc::getgid() };
         let blksize = BLOCK_SIZE;
-        let blocks = self.size / blksize + 1;
+        let blocks = self.size.parse::<u64>().unwrap() / blksize + 1;
         FileAttr {
             ino,
-            size: self.size,
+            size: self.size.parse::<u64>().unwrap(),
             blocks,
             atime: UNIX_EPOCH,
-            mtime: *self.updated_at,
-            ctime: *self.created_at,
-            crtime: *self.created_at,
+            mtime: *self.modified_time,
+            ctime: *self.created_time,
+            crtime: *self.created_time,
             kind,
             perm,
             nlink,

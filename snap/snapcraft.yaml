@@ -1,8 +1,8 @@
-name: aliyundrive-fuse
+name: PikpakDrive-fuse
 version: '0.1.11'
-summary: 阿里云盘 FUSE
+summary: PikPak网盘 FUSE
 description: |
-  阿里云盘 FUSE 磁盘挂载
+  PikPak网盘 FUSE 磁盘挂载
 
 grade: stable # must be 'stable' to release into candidate/stable channels
 confinement: strict # use 'strict' once you have the right plugs and slots
@@ -20,12 +20,12 @@ architectures:
   - build-on: armhf
 
 parts:
-  aliyundrive-fuse:
+  PikpakDrive-fuse:
     plugin: rust
     source: .
     stage-packages:
       - fuse3
 
 apps:
-  aliyundrive-fuse:
-    command: bin/aliyundrive-fuse
+  PikpakDrive-fuse:
+    command: bin/PikpakDrive-fuse

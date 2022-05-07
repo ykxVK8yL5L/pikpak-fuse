@@ -5,7 +5,7 @@ USE_PROCD=1
 START=99
 STOP=15
 
-NAME=aliyundrive-fuse
+NAME=PikpakDrive-fuse
 
 uci_get_by_type() {
 	local ret=$(uci get $NAME.@$1[0].$2 2>/dev/null)
@@ -39,7 +39,7 @@ start_service() {
       procd_set_param env REFRESH_TOKEN="$refresh_token"
       case $(uci_get_by_type default debug) in
         1|on|true|yes|enabled)
-          procd_append_param env RUST_LOG="aliyundrive_fuse=debug" ;;
+          procd_append_param env RUST_LOG="PikpakDrive_fuse=debug" ;;
         *) ;;
       esac
       procd_close_instance ;;
@@ -49,5 +49,5 @@ start_service() {
 }
 
 service_triggers() {
-	procd_add_reload_trigger "aliyundrive-fuse"
+	procd_add_reload_trigger "PikpakDrive-fuse"
 }

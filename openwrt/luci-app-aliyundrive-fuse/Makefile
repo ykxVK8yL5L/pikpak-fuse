@@ -1,6 +1,6 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=luci-app-aliyundrive-fuse
+PKG_NAME:=luci-app-PikpakDrive-fuse
 PKG_VERSION:=0.1.11
 PKG_RELEASE:=1
 PKG_PO_VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
@@ -8,9 +8,9 @@ PKG_PO_VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
 PKG_LICENSE:=MIT
 PKG_MAINTAINER:=messense <messense@icloud.com>
 
-LUCI_TITLE:=LuCI Support for aliyundrive-fuse
+LUCI_TITLE:=LuCI Support for PikpakDrive-fuse
 LUCI_PKGARCH:=all
-LUCI_DEPENDS:=+aliyundrive-fuse
+LUCI_DEPENDS:=+PikpakDrive-fuse
 
 include $(TOPDIR)/feeds/luci/luci.mk
 

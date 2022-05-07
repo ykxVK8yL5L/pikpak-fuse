@@ -1,13 +1,13 @@
 [Unit]
-Description=AliyunDrive FUSE
+Description=PikpakDrive FUSE
 After=network.target
 
 [Service]
 Type=simple
 PermissionsStartOnly=true
-ExecStartPre=/bin/mkdir -p /var/run/aliyundrive-fuse -p /mnt/aliyundrive
+ExecStartPre=/bin/mkdir -p /var/run/PikpakDrive-fuse -p /mnt/PikpakDrive
 Environment="REFRESH_TOKEN="
-ExecStart=/usr/bin/aliyundrive-fuse --allow-other -w /var/run/aliyundrive-fuse /mnt/aliyundrive
+ExecStart=/usr/bin/PikpakDrive-fuse --allow-other -w /var/run/PikpakDrive-fuse /mnt/PikpakDrive
 KillMode=process
 Restart=on-failure
 
