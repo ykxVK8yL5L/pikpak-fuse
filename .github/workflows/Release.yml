@@ -302,7 +302,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v3
         with:
-          images: ykxVK8yL5L/Pikpak-fuse
+          images: ykxVK8yL5L/pikpak-fuse
           tags: |
             type=schedule
             type=ref,event=branch
