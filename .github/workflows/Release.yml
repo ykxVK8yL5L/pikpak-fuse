@@ -60,7 +60,7 @@ jobs:
           file: target/x86_64-apple-darwin/release/Pikpak-fuse*.tar.gz
           file_glob: true
           overwrite: true
-          tag: ${{ github.ref }}
+          tag: "refs/tags/${{ github.event.inputs.tag }}"
 
   linux:
     runs-on: ubuntu-latest
