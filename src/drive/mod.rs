@@ -19,7 +19,7 @@ use tracing::{debug, error, info, warn};
 pub mod model;
 
 pub use model::*;
-pub use model::{pikpakFile, DateTime, FileType};
+pub use model::{PikpakFile, DateTime, FileType};
 
 const ORIGIN: &str = "https://api-drive.mypikpak.com/drive/v1/files";
 const REFERER: &str = "https://api-drive.mypikpak.com/drive/v1/files";
@@ -36,7 +36,7 @@ pub struct DriveConfig {
 
 
 #[derive(Debug, Clone)]
-pub struct pikpakDrive {
+pub struct PikpakDrive {
     config: DriveConfig,
     client: reqwest::blocking::Client,
     credentials: Arc<RwLock<Credentials>>,
@@ -44,7 +44,7 @@ pub struct pikpakDrive {
     pub nick_name: Option<String>,
 }
 
-impl pikpakDrive {
+impl PikpakDrive {
     pub fn new(config: DriveConfig, credentials:Credentials) -> Result<Self> {
         // let credentials = Credentials {
         //     refresh_token,
@@ -313,7 +313,7 @@ impl pikpakDrive {
         }
     }
 
-    pub fn list_all(&self, parent_file_id: &str) -> Result<Vec<pikpakFile>> {
+    pub fn list_all(&self, parent_file_id: &str) -> Result<Vec<PikpakFile>> {
         let mut files = Vec::new();
         let mut marker = None;
         loop {
@@ -369,7 +369,7 @@ impl pikpakDrive {
         let url = rurl;
         let mut data = HashMap::new();
         data.insert("file_id", file_id);
-        let res: pikpakFile = self.request(url,&data)?.context("expect response")?;
+        let res: PikpakFile = self.request(url,&data)?.context("expect response")?;
         
         if res.mime_type.contains("video/"){
             Ok(res.medias[0].link.url.clone())

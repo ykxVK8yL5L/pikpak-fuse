@@ -102,7 +102,7 @@ impl ops::Deref for DateTime {
 }
 
 #[derive(Debug, Clone,Serialize, Deserialize)]
-pub struct pikpakFile {
+pub struct PikpakFile {
     pub kind: String,
     pub id: String,
     pub parent_id: String,
@@ -131,11 +131,11 @@ pub struct Media {
 pub struct FilesList {
     pub kind : String,
     pub next_page_token : String,
-    pub files: Vec<pikpakFile>,
+    pub files: Vec<PikpakFile>,
 }
 
 
-impl pikpakFile {
+impl PikpakFile {
     pub fn new_root() -> Self {
         let now = SystemTime::now();
         Self {

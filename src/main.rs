@@ -3,8 +3,8 @@ use std::{env, io, path::PathBuf};
 use clap::Parser;
 use fuser::MountOption;
 
-use drive::{model::Credentials,pikpakDrive, DriveConfig};
-use vfs::pikpakDriveFileSystem;
+use drive::{model::Credentials,PikpakDrive, DriveConfig};
+use vfs::PikpakDriveFileSystem;
 
 
 
