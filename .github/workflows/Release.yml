@@ -50,8 +50,8 @@ jobs:
       - name: Archive binary
         run: |
           cd target/x86_64-apple-darwin/release
-          tar czvf Pikpak-fuse-${{ steps.tag.outputs.tag }}.apple-darwin.tar.gz Pikpak-fuse
-          shasum -a 256 Pikpak-fuse-${{ steps.tag.outputs.tag }}.apple-darwin.tar.gz > Pikpak-fuse-${{ steps.tag.outputs.tag }}.apple-darwin.tar.gz.sha256
+          tar czvf Pikpak-fuse-${{ github.event.inputs.tag }}.apple-darwin.tar.gz Pikpak-fuse
+          shasum -a 256 Pikpak-fuse-${{ github.event.inputs.tag }}.apple-darwin.tar.gz > Pikpak-fuse-${{ github.event.inputs.tag }}.apple-darwin.tar.gz.sha256
           cd -
       - name: Upload binary to GitHub Release
         uses: svenstaro/upload-release-action@v2
@@ -146,8 +146,8 @@ jobs:
       - name: Archive binary
         run: |
           cd target/${{ matrix.platform.target }}/release
-          tar czvf Pikpak-fuse-${{ steps.tag.outputs.tag }}.${{ matrix.platform.target }}.tar.gz Pikpak-fuse
-          shasum -a 256 Pikpak-fuse-${{ steps.tag.outputs.tag }}.${{ matrix.platform.target }}.tar.gz > Pikpak-fuse-${{ steps.tag.outputs.tag }}.${{ matrix.platform.target }}.tar.gz.sha256
+          tar czvf Pikpak-fuse-${{ github.event.inputs.tag }}.${{ matrix.platform.target }}.tar.gz Pikpak-fuse
+          shasum -a 256 Pikpak-fuse-${{ github.event.inputs.tag }}.${{ matrix.platform.target }}.tar.gz > Pikpak-fuse-${{ github.event.inputs.tag }}.${{ matrix.platform.target }}.tar.gz.sha256
           cd -
       - name: Upload binary to GitHub Release
         uses: svenstaro/upload-release-action@v2
@@ -156,7 +156,7 @@ jobs:
           file: target/${{ matrix.platform.target }}/release/Pikpak-fuse*.tar.gz*
           file_glob: true
           overwrite: true
-          tag: ${{ github.ref }}
+          tag: "refs/tags/${{ github.event.inputs.tag }}"
       - name: Upload deb to GitHub Release
         uses: svenstaro/upload-release-action@v2
         with:
@@ -164,7 +164,7 @@ jobs:
           file: target/${{ matrix.platform.target }}/debian/Pikpak-fuse_*.deb
           file_glob: true
           overwrite: true
-          tag: ${{ github.ref }}
+          tag: "refs/tags/${{ github.event.inputs.tag }}"
       - name: Upload RPM to GitHub Release
         uses: svenstaro/upload-release-action@v2
         with:
@@ -172,7 +172,7 @@ jobs:
           file: target/${{ matrix.platform.target }}/generate-rpm/Pikpak-fuse*.rpm
           file_glob: true
           overwrite: true
-          tag: ${{ github.ref }}
+          tag: "refs/tags/${{ github.event.inputs.tag }}"
       - name: Remove cached deb and RPM packages
         if: matrix.platform.deb
         run: |
@@ -246,22 +246,20 @@ jobs:
           if-no-files-found: error
       - name: Upload package to GitHub Release
         uses: svenstaro/upload-release-action@v2
-        if: "startsWith(github.ref, 'refs/tags/')"
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file_glob: true
           overwrite: true
           file: openwrt-sdk/bin/packages/*/PikpakDrive/Pikpak-fuse*.ipk
-          tag: ${{ github.ref }}
+          tag: "refs/tags/${{ github.event.inputs.tag }}"
       - name: Upload luci packages to GitHub Release
         uses: svenstaro/upload-release-action@v2
-        if: ${{ startsWith(github.ref, 'refs/tags/') && matrix.target.arch == 'aarch64_generic' }}
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file_glob: true
           overwrite: true
           file: openwrt-sdk/bin/packages/*/PikpakDrive/luci-*.ipk
-          tag: ${{ github.ref }}
+          tag: "refs/tags/${{ github.event.inputs.tag }}"
 
   docker:
     name: Build Docker Image
@@ -321,8 +319,8 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v1
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
+          username: ${{secrets.DOCKER_USER}}
+          password: ${{secrets.DOCKER_PASSWORD}}
       - name: docker build
         uses: docker/build-push-action@v2
         with:
@@ -338,7 +336,6 @@ jobs:
     environment:
       name: PyPI
       url: https://pypi.org/project/Pikpak-fuse/
-    if: "startsWith(github.ref, 'refs/tags/')"
     needs: [ linux, macos ]
     steps:
       - uses: actions/download-artifact@v2
