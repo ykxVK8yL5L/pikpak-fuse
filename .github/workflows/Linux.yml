@@ -1,0 +1,124 @@
+name: Release for Linux X86_64
+on:
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release'
+        required: true
+        default: 'v0.1.13'
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform: [
+          { target: "x86_64-unknown-linux-musl", image_tag: "x86_64-musl", wheel: true, deb: true },
+        ]
+    container:
+      image: docker://messense/rust-musl-cross:${{ matrix.platform.image_tag }}
+      env:
+        CFLAGS_armv7_unknown_linux_musleabihf: '-mfpu=vfpv3-d16'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v1
+        with:
+          key: ${{ matrix.platform.target }}
+      - name: Build wheels - manylinux
+        uses: messense/maturin-action@main
+        with:
+          target: ${{ matrix.platform.target }}
+          manylinux: auto
+          container: off
+          args: --no-sdist --release -o dist --strip --cargo-extra-args="--no-default-features --features rustls-tls"
+      - name: Build wheels - musllinux
+        if: matrix.platform.wheel
+        uses: messense/maturin-action@v1
+        with:
+          target: ${{ matrix.platform.target }}
+          manylinux: musllinux_1_1
+          container: off
+          args: --no-sdist --release -o dist --strip --cargo-extra-args="--no-default-features --features rustls-tls"
+      - name: Install cargo packages
+        if: matrix.platform.deb
+        run: |
+          which cargo-deb > /dev/null || cargo install --target `rustc -vV | grep host: | awk '{print $2}'` cargo-deb
+          which cargo-generate-rpm > /dev/null || cargo install --target `rustc -vV | grep host: | awk '{print $2}'` cargo-generate-rpm
+      - name: Build Debian package
+        if: matrix.platform.deb
+        run: cargo deb --target=${{ matrix.platform.target }} --no-build --no-strip
+      - name: Build RPM package
+        if: matrix.platform.deb
+        run: cargo generate-rpm --target=${{ matrix.platform.target }} --payload-compress none
+      - name: Upload wheels
+        if: matrix.platform.wheel
+        uses: actions/upload-artifact@v2
+        with:
+          name: wheels
+          path: dist
+          if-no-files-found: error
+      - name: Upx compress binary
+        uses: crazy-max/ghaction-upx@v1
+        with:
+          version: latest
+          files: target/${{ matrix.platform.target }}/release/pikpak-fuse
+      - name: Upload binary artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.platform.target }}-bin
+          path: target/${{ matrix.platform.target }}/release/pikpak-fuse
+          if-no-files-found: error
+      - name: Upload deb artifacts
+        if: matrix.platform.deb
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.platform.target }}-deb
+          path: target/${{ matrix.platform.target }}/debian/pikpak-fuse_*.deb
+          if-no-files-found: error
+      - name: Upload RPM artifacts
+        if: matrix.platform.deb
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.platform.target }}-rpm
+          path: target/${{ matrix.platform.target }}/generate-rpm/pikpak-fuse*.rpm
+          if-no-files-found: error
+      - name: Archive binary
+        run: |
+          cd target/${{ matrix.platform.target }}/release
+          tar czvf pikpak-fuse-${{ github.event.inputs.tag }}.${{ matrix.platform.target }}.tar.gz pikpak-fuse
+          shasum -a 256 pikpak-fuse-${{ github.event.inputs.tag }}.${{ matrix.platform.target }}.tar.gz > pikpak-fuse-${{ github.event.inputs.tag }}.${{ matrix.platform.target }}.tar.gz.sha256
+          cd -
+      - name: Upload binary to GitHub Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/${{ matrix.platform.target }}/release/pikpak-fuse*.tar.gz*
+          file_glob: true
+          overwrite: true
+          tag: "refs/tags/${{ github.event.inputs.tag }}"
+      - name: Upload deb to GitHub Release
+        if: matrix.platform.deb
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/${{ matrix.platform.target }}/debian/pikpak-fuse_*.deb
+          file_glob: true
+          overwrite: true
+          tag: "refs/tags/${{ github.event.inputs.tag }}"
+      - name: Upload RPM to GitHub Release
+        uses: svenstaro/upload-release-action@v2
+        if: matrix.platform.deb
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/${{ matrix.platform.target }}/generate-rpm/pikpak-fuse*.rpm
+          file_glob: true
+          overwrite: true
+          tag: "refs/tags/${{ github.event.inputs.tag }}"
+      - name: Remove cached deb and RPM packages
+        if: matrix.platform.deb
+        run: |
+          rm -rf target/${{ matrix.platform.target }}/debian
+          rm -rf target/${{ matrix.platform.target }}/generate-rpm
+  
