@@ -25,7 +25,7 @@ pikpak网盘 FUSE 磁盘挂载，主要用于配合 [Emby](https://emby.media) �
 
 ## 安装
 
-* macOS 需要先安装 [macfuse](https://osxfuse.github.io/)
+* macOS 需要先安装 [macfuse](https://osxfuse.github.io/)`brew install --cask macfuse`
 * Linux 需要先安装 fuse
   * Debian 系如 Ubuntu: `apt-get install -y fuse3`
   * RedHat 系如 CentOS: `yum install -y fuse3`
