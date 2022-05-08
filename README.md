@@ -5,6 +5,19 @@
 ./pikpak-fuse --pikpak-user XXXXXXXXX --pikpak-password XXXXXXX  -w token保存目录  挂载点
 ```
 
+
+## 可用代理【未验证】     
+https://cors.z7.workers.dev      
+https://cors.z13.workers.dev   
+https://cors.z14.workers.dev   
+https://cors.z15.workers.dev   
+https://cors.z16.workers.dev   
+https://cors.z17.workers.dev   
+https://cors.z18.workers.dev   
+https://pikpak.2509652494538.workers.dev
+
+
+
 # 挂载到本地Docker版不太实用就不说了
 
 # 安装[可能需要给执行权限]
