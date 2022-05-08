@@ -253,6 +253,9 @@ impl PikpakDrive {
         T: Serialize + ?Sized,
         U: DeserializeOwned,
     {
+
+        info!("fuck start request");
+
         let mut access_token = self.access_token()?;
         let url = reqwest::Url::parse(&url)?;
         let res = self
