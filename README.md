@@ -18,7 +18,7 @@ https://pikpak.2509652494538.workers.dev
 
 
 
-# 挂载到本地Docker版不太实用就不说了
+# Docker安装演示：https://youtu.be/-JXdcD0Yfbk
 
 # 安装[可能需要给执行权限]
 * 在[relase](https://github.com/ykxVK8yL5L/pikpak-fuse/releases)下载所需二进制，用命令行启动
