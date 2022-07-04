@@ -1,3 +1,4 @@
+# docker: https://hub.docker.com/r/ykxvk8yl5l/pikpak-fuse
 # 演示视频: https://youtu.be/fl1Lp1_1AR4
 # 基本完成
 命令行使用【可选参数--proxy-url xxxxxxxx】:
