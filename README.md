@@ -5,7 +5,7 @@
 ```
 ./pikpak-fuse --pikpak-user XXXXXXXXX --pikpak-password XXXXXXX  -w token保存目录  挂载点
 ```
-
+## 有网友反馈非邮箱登陆会登陆失败，请使用邮箱、密码方式登陆 
 
 ## 可用代理【未验证】
 https://api.13pikpak.cf
