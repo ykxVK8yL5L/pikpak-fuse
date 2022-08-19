@@ -48,10 +48,10 @@ fn main() -> anyhow::Result<()> {
     #[cfg(feature = "native-tls-vendored")]
     openssl_probe::init_ssl_cert_env_vars();
 
-    if env::var("RUST_LOG").is_err() {
-        env::set_var("RUST_LOG", "pikpakDrive_fuse=info");
-    }
     tracing_subscriber::fmt::init();
+    if env::var("RUST_LOG").is_err() {
+       env::set_var("RUST_LOG", "pikpak_fuse=info");
+    }
 
     let opt = Opt::parse();
     let drive_config = if opt.proxy_url.is_empty() {
@@ -84,7 +84,7 @@ fn main() -> anyhow::Result<()> {
     let vfs = PikpakDriveFileSystem::new(drive, opt.read_buffer_size);
     let mut mount_options = vec![MountOption::AutoUnmount, MountOption::NoAtime];
     // read only for now
-    mount_options.push(MountOption::RO);
+    // mount_options.push(MountOption::RO);
     if opt.allow_other {
         mount_options.push(MountOption::AllowOther);
     }

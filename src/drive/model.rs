@@ -116,6 +116,7 @@ pub struct PikpakFile {
     pub medias:Vec<Media>,
 }
 
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Link {
     pub url: String,
@@ -133,6 +134,57 @@ pub struct FilesList {
     pub next_page_token : String,
     pub files: Vec<PikpakFile>,
 }
+
+
+#[derive(Debug, Clone, Serialize)]
+pub struct CreateFolderRequest<'a> {
+    pub kind: &'a str,
+    pub name: &'a str,
+    pub parent_id: &'a str,
+}
+
+
+#[derive(Debug, Clone,Serialize, Deserialize)]
+pub struct CreateFolderResponse{
+    pub upload_type: String,
+    pub file: PikpakFile,
+}
+
+#[derive(Debug, Clone,Serialize, Deserialize)]
+pub struct TaskResponse{
+    pub task_id: String,
+}
+
+
+
+#[derive(Debug, Clone, Serialize)]
+pub struct DelFileRequest {
+    pub ids: Vec<String>,
+}
+
+
+#[derive(Debug, Clone, Serialize)]
+pub struct MoveFileRequest {
+    pub ids: Vec<String>,
+    pub to: MoveTo,
+}
+
+
+#[derive(Debug, Clone, Serialize)]
+pub struct MoveTo {
+    pub parent_id: String,
+}
+
+
+#[derive(Debug, Clone, Serialize)]
+pub struct RenameFileRequest<'a>{
+    pub name: &'a str,
+}
+
+
+
+
+
 
 
 impl PikpakFile {

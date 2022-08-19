@@ -50,6 +50,7 @@ impl PikpakDrive {
         //     refresh_token,
         //     access_token: None,
         // };
+        debug!("credentials: {:?}", credentials);
         let mut headers = HeaderMap::new();
         headers.insert("Origin", HeaderValue::from_static(ORIGIN));
         headers.insert("Referer", HeaderValue::from_static(REFERER));
@@ -313,12 +314,83 @@ impl PikpakDrive {
         }
     }
 
+
+    fn post_request<T, U>(&self, url: String, req: &T) -> Result<Option<U>>
+    where
+        T: Serialize + ?Sized,
+        U: DeserializeOwned,
+    {
+        let mut access_token = self.access_token()?;
+        let url = reqwest::Url::parse(&url)?;
+        let res = self
+            .client
+            .post(url.clone())
+            .bearer_auth(&access_token)
+            .json(&req)
+            .send()?
+            .error_for_status();
+        match res {
+            Ok(res) => {
+                if res.status() == StatusCode::NO_CONTENT {
+                    return Ok(None);
+                }
+                let res = res.json::<U>()?;
+                Ok(Some(res))
+            }
+            Err(err) => {
+                match err.status() {
+                    Some(
+                        status_code
+                        @
+                        // 4xx
+                        (StatusCode::UNAUTHORIZED
+                        | StatusCode::REQUEST_TIMEOUT
+                        | StatusCode::TOO_MANY_REQUESTS
+                        // 5xx
+                        | StatusCode::INTERNAL_SERVER_ERROR
+                        | StatusCode::BAD_GATEWAY
+                        | StatusCode::SERVICE_UNAVAILABLE
+                        | StatusCode::GATEWAY_TIMEOUT),
+                    ) => {
+                        if status_code == StatusCode::UNAUTHORIZED {
+                            // refresh token and retry
+                            let token_res = self.do_refresh_token_with_retry(None)?;
+                            access_token = token_res.access_token;
+                        } else {
+                            // wait for a while and retry
+                            thread::sleep(Duration::from_secs(1));
+                        }
+                        let res = self
+                            .client
+                            .post(url)
+                            .bearer_auth(&access_token)
+                            .json(&req)
+                            .send()
+                            ?
+                            .error_for_status()?;
+                        if res.status() == StatusCode::NO_CONTENT {
+                            return Ok(None);
+                        }
+                        let res = res.json::<U>()?;
+                        Ok(Some(res))
+                    }
+                    _ => Err(err.into()),
+                }
+            }
+        }
+    }
+
+
+
+
+
+
     pub fn list_all(&self, parent_file_id: &str) -> Result<Vec<PikpakFile>> {
         let mut files = Vec::new();
         let mut marker = None;
         loop {
             let res = self.list(parent_file_id, marker.as_deref())?;
-            println!("drive list  result is:{:?}",res);
+            //println!("drive list  result is:{:?}",res);
             files.extend(res.files.into_iter());
             if res.next_page_token.is_empty() {
                 break;
@@ -336,6 +408,23 @@ impl PikpakDrive {
         let mut rurl = format!("{}?parent_id={}&thumbnail_size=SIZE_LARGE&with_audit=true&page_token={}&limit=0&filters={{\"phase\":{{\"eq\":\"PHASE_TYPE_COMPLETE\"}},\"trashed\":{{\"eq\":false}}}}",self.config.api_base_url,&parent_file_id,pagetoken);
         self.request(rurl, &data).and_then(|res| res.context("expect response"))
     }
+
+
+    pub fn create_folder(&self, parent_id:&str, folder_name: &str) -> Result<CreateFolderResponse> {
+        debug!("drive create folder {}", folder_name);
+        let mut rurl = format!("{}",self.config.api_base_url);
+        let req = CreateFolderRequest{kind:"drive#folder",name:folder_name,parent_id:parent_id};
+        self.post_request(rurl, &req).and_then(|res| res.context("expect response"))
+    }
+
+
+    pub fn remove_file(&self, file_id: &str) -> Result<TaskResponse> {
+        debug!("drive remove file {}", file_id);
+        let mut rurl = format!("{}:batchDelete",self.config.api_base_url);
+        let req = DelFileRequest{ids:vec![file_id.to_string()]};
+        self.post_request(rurl,&req).and_then(|res| res.context("expect response"))
+    }
+
 
     pub fn download(&self, url: &str, start_pos: u64, size: usize) -> Result<Bytes> {
         use reqwest::header::RANGE;
