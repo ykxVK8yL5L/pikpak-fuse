@@ -344,6 +344,35 @@ impl Filesystem for PikpakDriveFileSystem {
         //reply.entry(&Duration::new(0, 0), &attrs.into(), 0);
     }
 
+
+    fn rmdir(&mut self, _req: &Request, parent: u64, name: &OsStr, reply: ReplyEmpty) {
+        debug!("rmdir() called with {:?} {:?}", parent, name);
+
+        let file = match self.lookup(parent, name) {
+            Ok(file) => file,
+            Err(e) => {
+                reply.error(e.into());
+                return;
+            }
+        };
+        let file_id = self.files.get(&file.ino).unwrap().id.clone();
+
+        let res:TaskResponse = match self.drive.remove_file(&file_id) {
+            Ok(res) => {
+                 reply.ok();
+                 return;
+            },
+            Err(error_code) => {
+                debug!("delete_folder error: {:?}", error_code);
+                reply.error(libc::EFAULT);
+                return;
+            }
+        };
+        reply.ok()
+    }
+
+
+
     // 文件操作
     fn create(
         &mut self,
@@ -364,11 +393,8 @@ impl Filesystem for PikpakDriveFileSystem {
         return;
     }
 
-
-
-    fn rmdir(&mut self, _req: &Request, parent: u64, name: &OsStr, reply: ReplyEmpty) {
-        debug!("rmdir() called with {:?} {:?}", parent, name);
-
+    fn unlink(&mut self, _req: &Request<'_>, parent: u64, name: &OsStr, reply: ReplyEmpty) {
+        debug!("unlink() called with {:?} {:?}", parent, name);
         let file = match self.lookup(parent, name) {
             Ok(file) => file,
             Err(e) => {
@@ -377,7 +403,6 @@ impl Filesystem for PikpakDriveFileSystem {
             }
         };
         let file_id = self.files.get(&file.ino).unwrap().id.clone();
-
         let res:TaskResponse = match self.drive.remove_file(&file_id) {
             Ok(res) => {
                  reply.ok();
