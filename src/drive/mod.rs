@@ -500,6 +500,17 @@ impl PikpakDrive {
     }
 
 
+
+    pub fn copy_file(&self, file_id: &str, new_parent_id: &str) -> Result<TaskResponse> {
+        let rurl = format!("{}:batchCopy",self.config.api_base_url);
+        let req = MoveFileRequest{ids:vec![file_id.to_string()],to:MoveTo { parent_id: new_parent_id.to_string()}};
+        self.post_request(rurl,&req).and_then(|res| res.context("expect response"))
+    }
+
+
+
+
+
     pub fn download(&self, url: &str, start_pos: u64, size: usize) -> Result<Bytes> {
         use reqwest::header::RANGE;
 

@@ -9,7 +9,7 @@ use std::{collections::BTreeMap, time::Duration};
 use bytes::Bytes;
 use fuser::{
     FileAttr, FileType, Filesystem, ReplyAttr, ReplyData, ReplyDirectory,ReplyCreate, ReplyEmpty, ReplyEntry,
-    ReplyOpen, Request, FUSE_ROOT_ID,
+    ReplyOpen,ReplyWrite, Request, FUSE_ROOT_ID,
 };
 use tracing::{debug,info};
 
@@ -324,9 +324,47 @@ impl Filesystem for PikpakDriveFileSystem {
         reply.ok();
     }
 
+    fn copy_file_range(
+        &mut self,
+        _req: &Request<'_>,
+        src_inode: u64,
+        src_fh: u64,
+        src_offset: i64,
+        dest_inode: u64,
+        dest_fh: u64,
+        dest_offset: i64,
+        size: u64,
+        _flags: u32,
+        reply: ReplyWrite,
+    ) {
+        debug!(
+            "copy_file_range() called with src ({}, {}, {}) dest ({}, {}, {}) size={}",
+            src_fh, src_inode, src_offset, dest_fh, dest_inode, dest_offset, size
+        );
 
 
+        let src_file = match self.files.get(&src_inode) {
+            Some(file) => file,
+            None => {
+                reply.error(libc::EFAULT);
+                return;
+            }
+        };
 
+        let src_file_id = src_file.id.clone();
+        let dest_file_id = self.files.get(&src_inode).unwrap().id.clone();
+        let res:TaskResponse = match self.drive.copy_file(&src_file_id, &dest_file_id){
+            Ok(res) => {
+                reply.written(src_file.size.parse::<u32>().unwrap());
+                return;
+            }
+            Err(error_code) => {
+                debug!("copy error: {:?}", error_code);
+                reply.error(libc::EFAULT);
+                return;
+            }
+        };
+    }
 
     //目录操作
     fn mkdir(
