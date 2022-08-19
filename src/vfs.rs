@@ -272,7 +272,7 @@ impl Filesystem for PikpakDriveFileSystem {
     }
 
     fn open(&mut self, _req: &Request<'_>, ino: u64, _flags: i32, reply: ReplyOpen) {
-        info!(inode = ino, "open");
+        debug!(inode = ino, "open");
         if let Some((file_id, file_name, file_size)) = self
             .files
             .get(&ino)
@@ -481,7 +481,7 @@ impl Filesystem for PikpakDriveFileSystem {
         flags: i32,
         reply: ReplyCreate,
     ) {
-        info!("create() called with {:?} {:?}", parent, name);
+        debug!("create() called with {:?} {:?}", parent, name);
         if self.lookup(parent, name).is_ok() {
             reply.error(libc::EEXIST);
             return;
