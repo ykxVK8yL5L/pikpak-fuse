@@ -382,6 +382,73 @@ impl PikpakDrive {
 
 
 
+    fn patch_request<T, U>(&self, url: String, req: &T) -> Result<Option<U>>
+    where
+        T: Serialize + ?Sized,
+        U: DeserializeOwned,
+    {
+        let mut access_token = self.access_token()?;
+        let url = reqwest::Url::parse(&url)?;
+        let res = self
+            .client
+            .patch(url.clone())
+            .bearer_auth(&access_token)
+            .json(&req)
+            .send()?
+            .error_for_status();
+        match res {
+            Ok(res) => {
+                if res.status() == StatusCode::NO_CONTENT {
+                    return Ok(None);
+                }
+                let res = res.json::<U>()?;
+                Ok(Some(res))
+            }
+            Err(err) => {
+                match err.status() {
+                    Some(
+                        status_code
+                        @
+                        // 4xx
+                        (StatusCode::UNAUTHORIZED
+                        | StatusCode::REQUEST_TIMEOUT
+                        | StatusCode::TOO_MANY_REQUESTS
+                        // 5xx
+                        | StatusCode::INTERNAL_SERVER_ERROR
+                        | StatusCode::BAD_GATEWAY
+                        | StatusCode::SERVICE_UNAVAILABLE
+                        | StatusCode::GATEWAY_TIMEOUT),
+                    ) => {
+                        if status_code == StatusCode::UNAUTHORIZED {
+                            // refresh token and retry
+                            let token_res = self.do_refresh_token_with_retry(None)?;
+                            access_token = token_res.access_token;
+                        } else {
+                            // wait for a while and retry
+                            thread::sleep(Duration::from_secs(1));
+                        }
+                        let res = self
+                            .client
+                            .post(url)
+                            .bearer_auth(&access_token)
+                            .json(&req)
+                            .send()
+                            ?
+                            .error_for_status()?;
+                        if res.status() == StatusCode::NO_CONTENT {
+                            return Ok(None);
+                        }
+                        let res = res.json::<U>()?;
+                        Ok(Some(res))
+                    }
+                    _ => Err(err.into()),
+                }
+            }
+        }
+    }
+
+
+
 
 
 
@@ -412,7 +479,7 @@ impl PikpakDrive {
 
     pub fn create_folder(&self, parent_id:&str, folder_name: &str) -> Result<CreateFolderResponse> {
         debug!("drive create folder {}", folder_name);
-        let mut rurl = format!("{}",self.config.api_base_url);
+        let rurl = format!("{}",self.config.api_base_url);
         let req = CreateFolderRequest{kind:"drive#folder",name:folder_name,parent_id:parent_id};
         self.post_request(rurl, &req).and_then(|res| res.context("expect response"))
     }
@@ -420,9 +487,16 @@ impl PikpakDrive {
 
     pub fn remove_file(&self, file_id: &str) -> Result<TaskResponse> {
         debug!("drive remove file {}", file_id);
-        let mut rurl = format!("{}:batchDelete",self.config.api_base_url);
+        let rurl = format!("{}:batchDelete",self.config.api_base_url);
         let req = DelFileRequest{ids:vec![file_id.to_string()]};
         self.post_request(rurl,&req).and_then(|res| res.context("expect response"))
+    }
+
+
+    pub fn rename_file(&self, file_id: &str, new_name: &str) -> Result<PikpakFile> {
+        let rurl = format!("{}/{}",self.config.api_base_url,file_id);
+        let req = RenameFileRequest{name:new_name};
+        self.patch_request(rurl,&req).and_then(|res| res.context("expect response"))
     }
 
 

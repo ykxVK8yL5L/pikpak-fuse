@@ -290,6 +290,44 @@ impl Filesystem for PikpakDriveFileSystem {
     }
 
 
+    fn rename(
+        &mut self,
+        req: &Request,
+        parent: u64,
+        name: &OsStr,
+        new_parent: u64,
+        new_name: &OsStr,
+        flags: u32,
+        reply: ReplyEmpty,
+    ) {
+        let file = match self.lookup(parent, name) {
+            Ok(attrs) => attrs,
+            Err(error_code) => {
+                reply.error(error_code.into());
+                return;
+            }
+        };
+
+        let file_id = self.files.get(&file.ino).unwrap().id.clone();
+
+        let res:PikpakFile = match self.drive.rename_file(&file_id, &new_name.to_string_lossy()) {
+            Ok(res) => {
+                 reply.ok();
+                 return;
+            },
+            Err(error_code) => {
+                debug!("rename error: {:?}", error_code);
+                reply.error(libc::EFAULT);
+                return;
+            }
+        };
+        reply.ok();
+    }
+
+
+
+
+
     //目录操作
     fn mkdir(
         &mut self,
@@ -305,7 +343,6 @@ impl Filesystem for PikpakDriveFileSystem {
             reply.error(libc::EEXIST);
             return;
         }
-
         let parent_file = match self.files.get(&parent).ok_or(Error::NoEntry){
             Ok(file) => file,
             Err(e) => {
@@ -313,10 +350,8 @@ impl Filesystem for PikpakDriveFileSystem {
                 return;
             }
         };
-
         let new_folder_name = name.to_string_lossy().to_string();
         let parent_file_id = parent_file.id.clone();
-
         let new_dir_res:CreateFolderResponse = match self.drive.create_folder(&parent_file_id,&new_folder_name) {
             Ok(res) => res,
             Err(error_code) => {
@@ -325,23 +360,10 @@ impl Filesystem for PikpakDriveFileSystem {
                 return;
             }
         };
-
         let new_dir = new_dir_res.file;
         let new_inode = self.next_inode();
-       
-
-        debug!(folderid=%new_dir.id, "创建文件夹成功");
-        
-        // let mut parent_inode = self.inodes.get(&parent).ok_or(Error::NoEntry).unwrap().clone();
-        // parent_inode.add_child(name.to_os_string(), new_inode);
-        // self.files.insert(new_inode, new_dir.clone());
-        // self.inodes.entry(new_inode).or_insert_with(|| Inode::new(parent));
-
         let attrs = new_dir.to_file_attr(new_inode);
-        debug!("获取文件夹属性成功");
         reply.entry(&TTL, &attrs, 0);
-
-        //reply.entry(&Duration::new(0, 0), &attrs.into(), 0);
     }
 
 
