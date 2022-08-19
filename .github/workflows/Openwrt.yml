@@ -6,7 +6,7 @@ on:
       tag:
         description: 'Tag to release'
         required: true
-        default: 'v0.1.13'
+        default: 'v0.1.14'
 
 jobs:
   openwrt:

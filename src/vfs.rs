@@ -3,8 +3,15 @@
 //! https://github.com/gz/btfs is used as a reference.
 use std::ffi::{OsStr, OsString};
 use std::path::Path;
-use std::time::UNIX_EPOCH;
+use std::time::{SystemTime,UNIX_EPOCH};
 use std::{collections::BTreeMap, time::Duration};
+use std::sync::atomic::{AtomicU64, Ordering};
+
+use httpdate;
+use hmacsha::HmacSha;
+use sha1::{Sha1, Digest};
+use hex_literal::hex;
+use base64::encode;
 
 use bytes::Bytes;
 use fuser::{
@@ -21,6 +28,9 @@ use crate::file_cache::FileCache;
 
 const TTL: Duration = Duration::from_secs(1);
 const BLOCK_SIZE: u64 = 4194304;
+
+const FILE_HANDLE_READ_BIT: u64 = 1 << 63;
+const FILE_HANDLE_WRITE_BIT: u64 = 1 << 62;
 
 
 #[derive(Debug, Clone)]
@@ -48,19 +58,24 @@ pub struct PikpakDriveFileSystem {
     files: BTreeMap<u64, PikpakFile>,
     inodes: BTreeMap<u64, Inode>,
     next_inode: u64,
-    next_fh: u64,
+    next_fh: AtomicU64,
+    oss_args: Option<OssArgs>,
+    upload_tags:CompleteMultipartUpload,
 }
 
 impl PikpakDriveFileSystem {
     pub fn new(drive: PikpakDrive, read_buffer_size: usize) -> Self {
         let file_cache = FileCache::new(drive.clone(), read_buffer_size);
+        let mut upload_tags = CompleteMultipartUpload{Part:vec![]};
         Self {
             drive,
             file_cache,
             files: BTreeMap::new(),
             inodes: BTreeMap::new(),
             next_inode: 1,
-            next_fh: 2,
+            next_fh: AtomicU64::new(1),
+            oss_args:None,
+            upload_tags:upload_tags,
         }
     }
 
@@ -72,8 +87,23 @@ impl PikpakDriveFileSystem {
 
     /// Next file handler
     fn next_fh(&mut self) -> u64 {
-        self.next_fh = self.next_fh.wrapping_add(1);
-        self.next_fh
+        let mut fh = self.next_fh.fetch_add(1, Ordering::SeqCst);
+        fh
+    }
+
+
+    fn allocate_next_file_handle(&self, read: bool, write: bool) -> u64 {
+        let mut fh = self.next_fh.fetch_add(1, Ordering::SeqCst);
+        // Assert that we haven't run out of file handles
+        assert!(fh < FILE_HANDLE_WRITE_BIT && fh < FILE_HANDLE_READ_BIT);
+        if read {
+            fh |= FILE_HANDLE_READ_BIT;
+        }
+        if write {
+            fh |= FILE_HANDLE_WRITE_BIT;
+        }
+
+        fh
     }
 
     fn init(&mut self) -> Result<(), Error> {
@@ -242,6 +272,7 @@ impl Filesystem for PikpakDriveFileSystem {
     }
 
     fn open(&mut self, _req: &Request<'_>, ino: u64, _flags: i32, reply: ReplyOpen) {
+        info!(inode = ino, "open");
         if let Some((file_id, file_name, file_size)) = self
             .files
             .get(&ino)
@@ -268,6 +299,9 @@ impl Filesystem for PikpakDriveFileSystem {
         reply: ReplyEmpty,
     ) {
         debug!(inode = ino, fh = fh, "release file");
+        let mut upload_tags = CompleteMultipartUpload{Part:vec![]};
+        self.upload_tags = upload_tags;
+        self.oss_args = None;
         self.file_cache.release(fh);
         reply.ok();
     }
@@ -283,6 +317,7 @@ impl Filesystem for PikpakDriveFileSystem {
         _lock_owner: Option<u64>,
         reply: ReplyData,
     ) {
+        debug!(inode = ino, fh = fh, offset = offset, size = size, "read work here");
         match self.read(ino, fh, offset, size) {
             Ok(data) => reply.data(&data),
             Err(e) => reply.error(e.into()),
@@ -399,8 +434,10 @@ impl Filesystem for PikpakDriveFileSystem {
             }
         };
         let new_dir = new_dir_res.file;
+
         let new_inode = self.next_inode();
         let attrs = new_dir.to_file_attr(new_inode);
+
         reply.entry(&TTL, &attrs, 0);
     }
 
@@ -444,13 +481,78 @@ impl Filesystem for PikpakDriveFileSystem {
         flags: i32,
         reply: ReplyCreate,
     ) {
-        debug!("create() called with {:?} {:?}", parent, name);
+        info!("create() called with {:?} {:?}", parent, name);
         if self.lookup(parent, name).is_ok() {
             reply.error(libc::EEXIST);
             return;
         }
-        reply.error(libc::EEXIST);
-        return;
+
+        let mut parent_inode = self.inodes.get(&parent).ok_or(Error::NoEntry).unwrap().clone();
+        let parent_file = match self.files.get(&parent).ok_or(Error::NoEntry){
+            Ok(file) => file,
+            Err(e) => {
+                reply.error(Error::ParentNotFound.into());
+                return;
+            }
+        };
+        let parent_file_id = parent_file.id.clone();
+        
+      
+        let file_name =name.to_string_lossy().to_string();
+        let now = SystemTime::now();
+        let hash_str = format!("{}{}",&file_name,now.duration_since(UNIX_EPOCH).unwrap().as_secs());
+        let mut hasher = Sha1::default();
+        hasher.update(hash_str.as_bytes());
+        let hash_code = hasher.finalize();
+        let file_hash = format!("{:X}",&hash_code);
+
+        
+        let file = PikpakFile {
+            name: file_name,
+            kind: "drive#file".to_string(),
+            id: "".to_string(),
+            parent_id:parent_file_id,
+            phase: "".to_string(),
+            size: "0".to_string(),
+            created_time: DateTime::new(now),
+            modified_time: DateTime::new(now),
+            file_extension: "".to_string(),
+            mime_type: "".to_string(),
+            web_content_link: "".to_string(),
+            medias:Vec::new(),
+            hash:Some(file_hash),
+        };
+        let new_file_inode = self.next_inode();
+        let attrs = file.to_file_attr(new_file_inode);
+
+        // self.files.insert(new_file_inode, file);
+        // parent_inode.add_child(name.to_os_string(), new_file_inode);
+        // self.inodes.insert(parent, parent_inode);
+        // info!(new_file_indode=new_file_inode, "create new file inode is");
+        // info!(parent_ino=parent, "parent ino is");
+
+        let (read, write) = match flags & libc::O_ACCMODE {
+            libc::O_RDONLY => (true, false),
+            libc::O_WRONLY => (false, true),
+            libc::O_RDWR => (true, true),
+            // Exactly one access mode flag must be specified
+            _ => {
+                reply.error(libc::EINVAL);
+                return;
+            }
+        };
+
+        reply.created(&TTL, &attrs, 0,self.allocate_next_file_handle(read, write), 0);
+
+        // reply.created(
+        //     &TTL,
+        //     &attrs.into(),
+        //     0,
+        //     self.allocate_next_file_handle(read, write),
+        //     0,
+        // );
+
+
     }
 
     fn unlink(&mut self, _req: &Request<'_>, parent: u64, name: &OsStr, reply: ReplyEmpty) {
@@ -477,7 +579,21 @@ impl Filesystem for PikpakDriveFileSystem {
         reply.ok()
     }
 
-
+    fn write(
+            &mut self,
+            _req: &Request<'_>,
+            ino: u64,
+            fh: u64,
+            offset: i64,
+            data: &[u8],
+            write_flags: u32,
+            flags: i32,
+            lock_owner: Option<u64>,
+            reply: ReplyWrite,
+        ) {
+        info!("write() called with {:?} {:?}", ino, fh);
+        reply.written(data.len() as u32);
+    }
 
 
 }

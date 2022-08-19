@@ -1,6 +1,6 @@
 [package]
 name = "pikpak-fuse"
-version = "0.1.13"
+version = "0.1.14"
 edition = "2021"
 description = "FUSE for pikpak"
 license = "MIT"
@@ -25,6 +25,11 @@ time = { version = "0.3", features = ["formatting", "parsing"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "local-time"] }
 url = "2.2"
+sha-1 = { version = "0.9", default-features = false }
+hex-literal = "0.3.4"
+hmac-sha = "0.6"
+base64 = "0.13.0"
+httpdate = "1.0.2"
 
 [features]
 default = ["rustls-tls", "libfuse"]
