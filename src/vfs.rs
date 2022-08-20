@@ -264,7 +264,7 @@ impl PikpakDriveFileSystem {
             let chunk_count =
                 size / upload_buffer_size + if size % upload_buffer_size != 0 { 1 } else { 0 };
             self.upload_state.chunk_count = chunk_count;
-            debug!("uploading {} ({} bytes)...", file.name, size);
+            info!("uploading {} ({} bytes)...", file.name, size);
             if size>0 {
                 let hash = file.clone().hash.unwrap();
                 let res = self
@@ -278,6 +278,10 @@ impl PikpakDriveFileSystem {
                         return Ok(false);
                     }
                 };
+
+                info!(file_name = upload_response.file.name, "upload response name");
+
+
 
                 let oss_args = OssArgs {
                     bucket: upload_response.resumable.params.bucket.to_string(),
@@ -773,31 +777,21 @@ impl Filesystem for PikpakDriveFileSystem {
 
     fn flush(&mut self, _req: &Request<'_>, ino: u64, fh: u64, lock_owner: u64, reply: ReplyEmpty) {
         info!("flush() called with {:?} {:?}", ino, fh);
-        // let fluse_file = match self.files.get(&ino) {
-        //     Some(file) => file,
-        //     None => {
-        //         reply.error(libc::ENOENT);
-        //         return;
-        //     }
-        // };
-        // info!(file_name=fluse_file.name, "flush file is");
-        reply.ok();
-
-    //    match self.prepare_for_upload(ino, fh){
-    //         Ok(true) => {
-    //             self.maybe_upload_chunk(true,ino, fh);
-    //             reply.ok();
-    //             return;
-    //         }
-    //         Ok(false) => {
-    //             reply.error(libc::EFAULT);
-    //             return;
-    //         }
-    //         Err(e) => {
-    //             reply.error(e.into());
-    //             return;
-    //         }
-    //     }
+       match self.prepare_for_upload(ino, fh){
+            Ok(true) => {
+                self.maybe_upload_chunk(true,ino, fh);
+                reply.ok();
+                return;
+            }
+            Ok(false) => {
+                reply.error(libc::EFAULT);
+                return;
+            }
+            Err(e) => {
+                reply.error(e.into());
+                return;
+            }
+        }
     }
 
     fn write(
@@ -814,23 +808,23 @@ impl Filesystem for PikpakDriveFileSystem {
         ) {
         info!("write() called with {:?} {:?}", ino, fh);
 
-        // match self.prepare_for_upload(ino, fh){
-        //     Ok(true) => {
-        //         //self.upload_state.buffer.extend_from_slice(&buf);
-        //         self.maybe_upload_chunk(false,ino, fh);
-        //         reply.written(data.len() as u32);
-        //         return;
-        //     }
-        //     Ok(false) => {
-        //         reply.error(libc::EFAULT);
-        //         return;
-        //     }
-        //     Err(e) => {
-        //         reply.error(e.into());
-        //         return;
-        //     }
-        // }
-        reply.written(data.len() as u32);
+        match self.prepare_for_upload(ino, fh){
+            Ok(true) => {
+                self.upload_state.buffer.extend_from_slice(&data);
+                self.maybe_upload_chunk(false,ino, fh);
+                reply.written(data.len() as u32);
+                return;
+            }
+            Ok(false) => {
+                reply.error(libc::EFAULT);
+                return;
+            }
+            Err(e) => {
+                reply.error(e.into());
+                return;
+            }
+        }
+        //reply.written(data.len() as u32);
        
     }
 
