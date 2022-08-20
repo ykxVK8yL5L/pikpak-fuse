@@ -528,7 +528,7 @@ impl PikpakDrive {
         self.post_request(rurl,&req).and_then(|res| res.context("expect response"))
     }
 
-    pub fn create_file_with_proof(&self,name: &str, parent_file_id: &str, hash:&str, size: u64,chunk_count: u64) ->  Result<UploadResponse> {
+    pub fn create_file_with_proof(&self,name: &str, parent_file_id: &str, hash:&str, size: u64) ->  Result<UploadResponse> {
         let url = format!("{}",self.config.api_base_url);
         let req = UploadRequest{
             kind:"drive#file".to_string(),
