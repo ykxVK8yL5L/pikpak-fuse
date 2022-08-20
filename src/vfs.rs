@@ -245,20 +245,19 @@ impl PikpakDriveFileSystem {
 
 
     fn prepare_for_upload(&mut self,ino: u64, fh: u64) -> Result<bool, Error> {
+        info!("prepare_for_upload");
         if self.upload_state.chunk_count == 0 {
             let size = self.upload_state.size;
             let file = self.files.get(&ino).ok_or(Error::NoEntry)?;
 
             if !file.id.is_empty() {
-                if let Some(content_hash) = file.hash.as_ref() {
-                    if let Some(sha1) = self.upload_state.sha1.as_ref() {
-                        if content_hash.eq_ignore_ascii_case(sha1) {
-                            return Ok(false);
-                        }
-                    }
-                }
+                return Ok(false);
             }
             // TODO: create parent folders?
+
+
+            info!("prepare_for_upload after upload_state.chunk_count==0");
+
 
             let upload_buffer_size = BLOCK_SIZE as u64;
             let chunk_count =
@@ -315,6 +314,9 @@ impl PikpakDriveFileSystem {
 
 
     fn maybe_upload_chunk(&mut self,remaining: bool,ino: u64, fh: u64)-> Result<(), Error>{
+
+        info!("maybe_upload_chunk");
+
         let chunk_size = if remaining {
             // last chunk size maybe less than upload_buffer_size
             self.upload_state.buffer.remaining()
@@ -327,6 +329,7 @@ impl PikpakDriveFileSystem {
             && self.upload_state.buffer.remaining() >= chunk_size
             && current_chunk <= self.upload_state.chunk_count
         {
+            info!("maybe_upload_chunk after chunk_size>0");
             let file = self.files.get(&ino).ok_or(Error::NoEntry)?;
             let chunk_data = self.upload_state.buffer.split_to(chunk_size);
 
