@@ -1,0 +1,63 @@
+name: Release for Linux Other
+on:
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release'
+        required: true
+        default: 'v0.1.14'
+
+jobs:
+  linux-others:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform:
+          - target: "armv5te-unknown-linux-musleabi"
+            image_tag: "armv5te-musleabi"
+            cargo_extra_args: --no-default-features --features rustls-tls
+          - target: "mips-unknown-linux-musl"
+            image_tag: "mips-musl"
+            cargo_extra_args: --no-default-features --features native-tls-vendored
+          - target: "mipsel-unknown-linux-musl"
+            image_tag: "mipsel-musl"
+            cargo_extra_args: --no-default-features --features native-tls-vendored
+    container:
+      image: docker://messense/rust-musl-cross:${{ matrix.platform.image_tag }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v1
+        with:
+          key: ${{ matrix.platform.target }}
+      - name: Build
+        env:
+          RUSTFLAGS: -C target-feature=+crt-static -C link-arg=-s
+        run: |
+          cargo build --release --target ${{ matrix.platform.target }} ${{ matrix.platform.cargo_extra_args }}
+      - name: Upx compress binary
+        uses: crazy-max/ghaction-upx@v1
+        with:
+          version: v3.95  # v3.96 breaks mipsel, https://github.com/upx/upx/issues/504
+          files: target/${{ matrix.platform.target }}/release/pikpak-fuse
+      - name: Upload binary artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.platform.target }}-bin
+          path: target/${{ matrix.platform.target }}/release/pikpak-fuse
+          if-no-files-found: error
+      - name: Archive binary
+        run: |
+          cd target/${{ matrix.platform.target }}/release
+          tar czvf pikpak-fuse-${{ steps.tag.outputs.tag }}.${{ matrix.platform.target }}.tar.gz pikpak-fuse
+          shasum -a 256 pikpak-fuse-${{ steps.tag.outputs.tag }}.${{ matrix.platform.target }}.tar.gz > pikpak-fuse-${{ steps.tag.outputs.tag }}.${{ matrix.platform.target }}.tar.gz.sha256
+          cd -
+      - name: Upload binary to GitHub Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/${{ matrix.platform.target }}/release/pikpak-fuse*.tar.gz*
+          file_glob: true
+          overwrite: true
+          tag: "refs/tags/${{ github.event.inputs.tag }}"
