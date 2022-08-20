@@ -693,6 +693,14 @@ impl Filesystem for PikpakDriveFileSystem {
         reply: ReplyCreate,
     ) {
         info!("create() called with {:?} {:?}", parent, name);
+
+        // 忽略 macOS 上的一些特殊文件
+        let file_name = name.to_string_lossy();
+        if file_name == ".DS_Store" || file_name.starts_with("._") {
+            reply.error(libc::EFAULT);
+            return;
+        }
+
         if self.lookup(parent, name).is_ok() {
             reply.error(libc::EEXIST);
             return;
@@ -844,7 +852,6 @@ impl Filesystem for PikpakDriveFileSystem {
         //reply.written(data.len() as u32);
        
     }
-
 
 }
 
