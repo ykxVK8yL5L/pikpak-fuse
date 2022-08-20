@@ -412,12 +412,11 @@ impl Filesystem for PikpakDriveFileSystem {
         let file_name = name.to_string_lossy().to_string();
         info!(file_name = file_name, "lookup for macos special file");
 
-        if file_name == ".DS_Store" || file_name.starts_with("._") {
+        if file_name == ".DS_Store" || file_name.starts_with("._") || file_name.starts_with(".") {
             reply.error(libc::ENOENT);
             return ;
         }
         
-
         debug!(parent = parent, name = %dirname.display(), "lookup");
         match self.lookup(parent, name) {
             Ok(attr) => reply.entry(&TTL, &attr, 0),
@@ -755,7 +754,7 @@ impl Filesystem for PikpakDriveFileSystem {
 
         self.files.insert(new_file_inode, file.clone());
 
-        info!("self.files.insert file {:?}", file);
+        info!("{},self.files.insert file {:?}", new_file_inode,file);
 
 
         parent_inode.add_child(name.to_os_string(), new_file_inode);
