@@ -798,24 +798,24 @@ impl Filesystem for PikpakDriveFileSystem {
         reply.ok()
     }
 
-    fn flush(&mut self, _req: &Request<'_>, ino: u64, fh: u64, lock_owner: u64, reply: ReplyEmpty) {
-        info!("flush() called with {:?} {:?}", ino, fh);
-       match self.prepare_for_upload(ino, fh){
-            Ok(true) => {
-                self.maybe_upload_chunk(true,ino, fh);
-                reply.ok();
-                return;
-            }
-            Ok(false) => {
-                reply.error(libc::EFAULT);
-                return;
-            }
-            Err(e) => {
-                reply.error(e.into());
-                return;
-            }
-        }
-    }
+    // fn flush(&mut self, _req: &Request<'_>, ino: u64, fh: u64, lock_owner: u64, reply: ReplyEmpty) {
+    //     info!("flush() called with {:?} {:?}", ino, fh);
+    //    match self.prepare_for_upload(ino, fh){
+    //         Ok(true) => {
+    //             self.maybe_upload_chunk(true,ino, fh);
+    //             reply.ok();
+    //             return;
+    //         }
+    //         Ok(false) => {
+    //             reply.error(libc::EFAULT);
+    //             return;
+    //         }
+    //         Err(e) => {
+    //             reply.error(e.into());
+    //             return;
+    //         }
+    //     }
+    // }
 
     fn write(
             &mut self,
@@ -829,26 +829,26 @@ impl Filesystem for PikpakDriveFileSystem {
             lock_owner: Option<u64>,
             reply: ReplyWrite,
         ) {
-        info!("write() called with {:?} {:?}", ino, fh);
+        info!("write() called with {:?} {:?}", offset, data.len());
 
-        match self.prepare_for_upload(ino, fh){
-            Ok(true) => {
-                self.upload_state.buffer.extend_from_slice(&data);
-                info!("write()  after upload_state.buffer.extend_from_slice");
-                self.maybe_upload_chunk(false,ino, fh);
-                reply.written(data.len() as u32);
-                return;
-            }
-            Ok(false) => {
-                reply.error(libc::EFAULT);
-                return;
-            }
-            Err(e) => {
-                reply.error(e.into());
-                return;
-            }
-        }
-        //reply.written(data.len() as u32);
+        // match self.prepare_for_upload(ino, fh){
+        //     Ok(true) => {
+        //         self.upload_state.buffer.extend_from_slice(&data);
+        //         info!("write()  after upload_state.buffer.extend_from_slice");
+        //         self.maybe_upload_chunk(false,ino, fh);
+        //         reply.written(data.len() as u32);
+        //         return;
+        //     }
+        //     Ok(false) => {
+        //         reply.error(libc::EFAULT);
+        //         return;
+        //     }
+        //     Err(e) => {
+        //         reply.error(e.into());
+        //         return;
+        //     }
+        // }
+        reply.written(data.len() as u32);
        
     }
 
