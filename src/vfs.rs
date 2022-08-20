@@ -508,19 +508,53 @@ impl Filesystem for PikpakDriveFileSystem {
             }
         };
 
+
         let file_id = self.files.get(&file.ino).unwrap().id.clone();
 
-        let res:PikpakFile = match self.drive.rename_file(&file_id, &new_name.to_string_lossy()) {
-            Ok(res) => {
-                 reply.ok();
-                 return;
-            },
-            Err(error_code) => {
-                debug!("rename error: {:?}", error_code);
-                reply.error(libc::EFAULT);
-                return;
+        if parent == new_parent {
+            let res:PikpakFile = match self.drive.rename_file(&file_id, &new_name.to_string_lossy()) {
+                Ok(res) => {
+                     reply.ok();
+                     return;
+                },
+                Err(error_code) => {
+                    debug!("rename error: {:?}", error_code);
+                    reply.error(libc::EFAULT);
+                    return;
+                }
+            };
+
+        } else {
+            if name != new_name {
+                let res:PikpakFile = match self.drive.rename_file(&file_id, &new_name.to_string_lossy()) {
+                    Ok(res) => res,
+                    Err(error_code) => {
+                        debug!("rename newname error: to new parent failed {:?}", error_code);
+                        reply.error(libc::EFAULT);
+                        return;
+                    }
+                };
             }
-        };
+            let new_parent = self.files.get(&new_parent).unwrap().id.clone();
+            let res:PikpakFile = match self.drive.move_file(&file_id, &new_parent) {
+                Ok(res) => {
+                    reply.ok();
+                    return;
+                },
+                Err(error_code) => {
+                    debug!("rename error: {:?}", error_code);
+                    reply.error(libc::EFAULT);
+                    return;
+                }
+            };
+    
+        }
+            
+    
+
+        
+
+        
         reply.ok();
     }
 

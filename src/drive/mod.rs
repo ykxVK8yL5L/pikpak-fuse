@@ -506,6 +506,13 @@ impl PikpakDrive {
     }
 
 
+    pub fn move_file(&self, file_id: &str, new_parent_id: &str) -> Result<TaskResponse>  {
+        let rurl = format!("{}:batchMove",self.config.api_base_url);
+        let req = MoveFileRequest{ids:vec![file_id.to_string()],to:MoveTo { parent_id: new_parent_id.to_string()}};
+        self.post_request(rurl,&req).and_then(|res| res.context("expect response"))
+    }
+
+
     pub fn rename_file(&self, file_id: &str, new_name: &str) -> Result<PikpakFile> {
         let rurl = format!("{}/{}",self.config.api_base_url,file_id);
         let req = RenameFileRequest{name:new_name};
