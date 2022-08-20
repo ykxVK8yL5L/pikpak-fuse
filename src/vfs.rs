@@ -508,9 +508,8 @@ impl Filesystem for PikpakDriveFileSystem {
             }
         };
 
-
+        debug!(flags = flags, name=name.to_string_lossy().to_string(), "rename");
         let file_id = self.files.get(&file.ino).unwrap().id.clone();
-
         if parent == new_parent {
             let res:PikpakFile = match self.drive.rename_file(&file_id, &new_name.to_string_lossy()) {
                 Ok(res) => {
