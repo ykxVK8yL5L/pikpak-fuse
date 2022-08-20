@@ -5,7 +5,6 @@ use std::ffi::{OsStr, OsString};
 use std::path::Path;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use std::{collections::BTreeMap};
-use std::sync::atomic::{AtomicU64, Ordering};
 
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use fuser::{
@@ -93,7 +92,7 @@ pub struct PikpakDriveFileSystem {
     files: BTreeMap<u64, PikpakFile>,
     inodes: BTreeMap<u64, Inode>,
     next_inode: u64,
-    next_fh: AtomicU64,
+    next_fh: u64,
     upload_state: UploadState,
 }
 
@@ -106,7 +105,7 @@ impl PikpakDriveFileSystem {
             files: BTreeMap::new(),
             inodes: BTreeMap::new(),
             next_inode: 1,
-            next_fh: AtomicU64::new(1),
+            next_fh: 1,
             upload_state: UploadState::default(),
         }
     }
@@ -119,13 +118,13 @@ impl PikpakDriveFileSystem {
 
     /// Next file handler
     fn next_fh(&mut self) -> u64 {
-        let mut fh = self.next_fh.fetch_add(1, Ordering::SeqCst);
-        fh
+        self.next_fh = self.next_fh.wrapping_add(1);
+        self.next_fh
     }
 
 
     fn allocate_next_file_handle(&self, read: bool, write: bool) -> u64 {
-        let mut fh = self.next_fh.fetch_add(1, Ordering::SeqCst);
+        let mut fh = self.next_fh.wrapping_add(1);
         // Assert that we haven't run out of file handles
         assert!(fh < FILE_HANDLE_WRITE_BIT && fh < FILE_HANDLE_READ_BIT);
         if read {
