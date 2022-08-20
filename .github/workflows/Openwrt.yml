@@ -65,7 +65,7 @@ jobs:
           cat feeds.conf
           ./scripts/feeds update -a > /dev/null
           make defconfig
-          ./scripts/feeds install -d y -p "pikpakDrive" -f -a
+          ./scripts/feeds install -d y -f -a
           make package/pikpak-fuse/compile V=s
           make package/luci-app-pikpak-fuse/compile V=s
           tree bin/packages/
