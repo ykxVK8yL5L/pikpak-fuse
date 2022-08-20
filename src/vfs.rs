@@ -753,9 +753,12 @@ impl Filesystem for PikpakDriveFileSystem {
         };
 
         self.files.insert(new_file_inode, file.clone());
+        self.inodes.entry(new_file_inode).or_insert_with(|| Inode::new(new_file_inode));
 
         info!("{},self.files.insert file {:?}", new_file_inode,file);
 
+
+        
 
         parent_inode.add_child(name.to_os_string(), new_file_inode);
         self.inodes.insert(new_file_inode, file_inode);

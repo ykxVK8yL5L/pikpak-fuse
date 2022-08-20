@@ -466,6 +466,7 @@ impl PikpakDrive {
 
 
     pub fn list_all(&self, parent_file_id: &str) -> Result<Vec<PikpakFile>> {
+        info!("drive list_all: {}", parent_file_id);
         let mut files = Vec::new();
         let mut marker = None;
         loop {
