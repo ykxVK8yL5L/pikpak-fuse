@@ -548,12 +548,6 @@ impl Filesystem for PikpakDriveFileSystem {
             };
     
         }
-            
-    
-
-        
-
-        
         reply.ok();
     }
 
@@ -666,7 +660,7 @@ impl Filesystem for PikpakDriveFileSystem {
         reply.ok()
     }
 
-
+ 
 
     // 文件操作
     fn create(
@@ -679,7 +673,7 @@ impl Filesystem for PikpakDriveFileSystem {
         flags: i32,
         reply: ReplyCreate,
     ) {
-        debug!("create() called with {:?} {:?}", parent, name);
+        info!("create() called with {:?} {:?}", parent, name);
         if self.lookup(parent, name).is_ok() {
             reply.error(libc::EEXIST);
             return;
@@ -723,7 +717,7 @@ impl Filesystem for PikpakDriveFileSystem {
             hash:Some(file_hash),
         };
 
-        self.files.insert(new_file_inode, file.clone());
+        // self.files.insert(new_file_inode, file.clone());
         parent_inode.add_child(name.to_os_string(), new_file_inode);
         self.inodes.insert(new_file_inode, file_inode);
         self.inodes.insert(parent, parent_inode);
@@ -739,15 +733,28 @@ impl Filesystem for PikpakDriveFileSystem {
             }
         };
         let attrs = file.to_file_attr(new_file_inode);
+
+
+
+        let fh = self.allocate_next_file_handle(read, write);
+
+        info!("create() created file {:?}", fh);
+        info!("create() created flags {:?}", flags);
+
+
         reply.created(
             &Duration::new(0, 0),
             &attrs.into(),
             0,
-            self.allocate_next_file_handle(read, write),
+            fh,
             0,
         );
 
     }
+
+
+
+
 
     fn unlink(&mut self, _req: &Request<'_>, parent: u64, name: &OsStr, reply: ReplyEmpty) {
         debug!("unlink() called with {:?} {:?}", parent, name);
@@ -774,7 +781,7 @@ impl Filesystem for PikpakDriveFileSystem {
     }
 
     fn flush(&mut self, _req: &Request<'_>, ino: u64, fh: u64, lock_owner: u64, reply: ReplyEmpty) {
-        debug!("flush() called with {:?} {:?}", ino, fh);
+        info!("flush() called with {:?} {:?}", ino, fh);
         // let fluse_file = match self.files.get(&ino) {
         //     Some(file) => file,
         //     None => {
@@ -814,7 +821,7 @@ impl Filesystem for PikpakDriveFileSystem {
             lock_owner: Option<u64>,
             reply: ReplyWrite,
         ) {
-        debug!("write() called with {:?} {:?}", ino, fh);
+        info!("write() called with {:?} {:?}", ino, fh);
 
         // match self.prepare_for_upload(ino, fh){
         //     Ok(true) => {
