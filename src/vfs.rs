@@ -244,134 +244,125 @@ impl PikpakDriveFileSystem {
 
 
 
-    // fn prepare_for_upload(&mut self,ino: u64, fh: u64) -> Result<bool, Error> {
-    //     if self.upload_state.chunk_count == 0 {
-    //         let size = self.upload_state.size;
-    //         let file = self.files.get(&ino).ok_or(Error::NoEntry)?;
+    fn prepare_for_upload(&mut self,ino: u64, fh: u64) -> Result<bool, Error> {
+        if self.upload_state.chunk_count == 0 {
+            let size = self.upload_state.size;
+            let file = self.files.get(&ino).ok_or(Error::NoEntry)?;
 
-    //         if !file.id.is_empty() {
-    //             if let Some(content_hash) = file.hash.as_ref() {
-    //                 if let Some(sha1) = self.upload_state.sha1.as_ref() {
-    //                     if content_hash.eq_ignore_ascii_case(sha1) {
-    //                         return Ok(false);
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //         // TODO: create parent folders?
+            if !file.id.is_empty() {
+                if let Some(content_hash) = file.hash.as_ref() {
+                    if let Some(sha1) = self.upload_state.sha1.as_ref() {
+                        if content_hash.eq_ignore_ascii_case(sha1) {
+                            return Ok(false);
+                        }
+                    }
+                }
+            }
+            // TODO: create parent folders?
 
-    //         let upload_buffer_size = BLOCK_SIZE as u64;
-    //         let chunk_count =
-    //             size / upload_buffer_size + if size % upload_buffer_size != 0 { 1 } else { 0 };
-    //         self.upload_state.chunk_count = chunk_count;
-    //         debug!("uploading {} ({} bytes)...", file.name, size);
-    //         if size>0 {
-    //             let hash = file.clone().hash.unwrap();
-    //             let res = self
-    //                 .drive
-    //                 .create_file_with_proof(&file.name, &file.parent_id, &hash, size, chunk_count);
+            let upload_buffer_size = BLOCK_SIZE as u64;
+            let chunk_count =
+                size / upload_buffer_size + if size % upload_buffer_size != 0 { 1 } else { 0 };
+            self.upload_state.chunk_count = chunk_count;
+            debug!("uploading {} ({} bytes)...", file.name, size);
+            if size>0 {
+                let hash = file.clone().hash.unwrap();
+                let res = self
+                    .drive
+                    .create_file_with_proof(&file.name, &file.parent_id, &hash, size, chunk_count);
             
-    //             let upload_response = match res {
-    //                 Ok(upload_response_info) => upload_response_info,
-    //                 Err(err) => {
-    //                     error!(file_name = file.name, error = %err, "create file with proof failed");
-    //                     return Ok(false);
-    //                 }
-    //             };
+                let upload_response = match res {
+                    Ok(upload_response_info) => upload_response_info,
+                    Err(err) => {
+                        error!(file_name = file.name, error = %err, "create file with proof failed");
+                        return Ok(false);
+                    }
+                };
 
-    //             let oss_args = OssArgs {
-    //                 bucket: upload_response.resumable.params.bucket.to_string(),
-    //                 key: upload_response.resumable.params.key.to_string(),
-    //                 endpoint: upload_response.resumable.params.endpoint.to_string(),
-    //                 access_key_id: upload_response.resumable.params.access_key_id.to_string(),
-    //                 access_key_secret: upload_response.resumable.params.access_key_secret.to_string(),
-    //                 security_token: upload_response.resumable.params.security_token.to_string(),
-    //             };
-    //             self.upload_state.oss_args = Some(oss_args);
+                let oss_args = OssArgs {
+                    bucket: upload_response.resumable.params.bucket.to_string(),
+                    key: upload_response.resumable.params.key.to_string(),
+                    endpoint: upload_response.resumable.params.endpoint.to_string(),
+                    access_key_id: upload_response.resumable.params.access_key_id.to_string(),
+                    access_key_secret: upload_response.resumable.params.access_key_secret.to_string(),
+                    security_token: upload_response.resumable.params.security_token.to_string(),
+                };
+                self.upload_state.oss_args = Some(oss_args);
     
-    //             let oss_args = self.upload_state.oss_args.as_ref().unwrap();
-    //             let pre_upload_info = self.drive.get_pre_upload_info(&oss_args);
-    //             if let Err(err) = pre_upload_info {
-    //                 error!(file_name = file.name, error = %err, "get pre upload info failed");
-    //                 return Ok(false);
-    //             }
+                let oss_args = self.upload_state.oss_args.as_ref().unwrap();
+                let pre_upload_info = self.drive.get_pre_upload_info(&oss_args);
+                if let Err(err) = pre_upload_info {
+                    error!(file_name = file.name, error = %err, "get pre upload info failed");
+                    return Ok(false);
+                }
                
-    //             self.upload_state.upload_id = match pre_upload_info {
-    //                 Ok(upload_id) => upload_id,
-    //                 Err(err) => {
-    //                     error!(file_name = file.name, error = %err, "get pre upload info failed");
-    //                     return Ok(false);
-    //                 }
-    //             };
-    //             debug!(file_name = file.name, upload_id = %self.upload_state.upload_id, "pre upload info get upload_id success");
-    //         }
-    //     }
-    //     Ok(true)
-    // }
+                self.upload_state.upload_id = match pre_upload_info {
+                    Ok(upload_id) => upload_id,
+                    Err(err) => {
+                        error!(file_name = file.name, error = %err, "get pre upload info failed");
+                        return Ok(false);
+                    }
+                };
+                debug!(file_name = file.name, upload_id = %self.upload_state.upload_id, "pre upload info get upload_id success");
+            }
+        }
+        Ok(true)
+    }
 
 
-    // fn maybe_upload_chunk(&mut self,remaining: bool,ino: u64, fh: u64)-> Result<(), Error>{
-    //     let chunk_size = if remaining {
-    //         // last chunk size maybe less than upload_buffer_size
-    //         self.upload_state.buffer.remaining()
-    //     } else {
-    //         BLOCK_SIZE as usize
-    //     };
-    //     let current_chunk = self.upload_state.chunk;
+    fn maybe_upload_chunk(&mut self,remaining: bool,ino: u64, fh: u64)-> Result<(), Error>{
+        let chunk_size = if remaining {
+            // last chunk size maybe less than upload_buffer_size
+            self.upload_state.buffer.remaining()
+        } else {
+            BLOCK_SIZE as usize
+        };
+        let current_chunk = self.upload_state.chunk;
 
-    //     if chunk_size > 0
-    //         && self.upload_state.buffer.remaining() >= chunk_size
-    //         && current_chunk <= self.upload_state.chunk_count
-    //     {
-    //         let file = self.files.get(&ino).ok_or(Error::NoEntry)?;
-    //         let chunk_data = self.upload_state.buffer.split_to(chunk_size);
+        if chunk_size > 0
+            && self.upload_state.buffer.remaining() >= chunk_size
+            && current_chunk <= self.upload_state.chunk_count
+        {
+            let file = self.files.get(&ino).ok_or(Error::NoEntry)?;
+            let chunk_data = self.upload_state.buffer.split_to(chunk_size);
 
-    //         let upload_data = chunk_data.freeze();
-    //         let oss_args = match self.upload_state.oss_args.as_ref() {
-    //             Some(oss_args) => oss_args,
-    //             None => {
-    //                 error!(file_name = %file.name, "获取文件上传信息错误");
-    //                 return Err(Error::UploadFailed);
-    //             }
-    //         };
-    //         let res = self.drive.upload_chunk(file,oss_args,&self.upload_state.upload_id,current_chunk,upload_data.clone());
+            let upload_data = chunk_data.freeze();
+            let oss_args = match self.upload_state.oss_args.as_ref() {
+                Some(oss_args) => oss_args,
+                None => {
+                    error!(file_name = %file.name, "获取文件上传信息错误");
+                    return Err(Error::UploadFailed);
+                }
+            };
+            let res = self.drive.upload_chunk(file,oss_args,&self.upload_state.upload_id,current_chunk,upload_data.clone());
             
-    //         let part = match res {
-    //             Ok(part) => part,
-    //             Err(err) => {
-    //                 error!(file_name = %file.name, error = %err, "上传分片失败，无法获取ETag");
-    //                 return Err(Error::UploadFailed);
-    //             }
-    //         };
+            let part = match res {
+                Ok(part) => part,
+                Err(err) => {
+                    error!(file_name = %file.name, error = %err, "上传分片失败，无法获取ETag");
+                    return Err(Error::UploadFailed);
+                }
+            };
                 
-
-
-
-
-    //         debug!(chunk_count = %self.upload_state.chunk_count, current_chunk=current_chunk, "upload chunk info");
-    //         self.upload_state.upload_tags.Part.push(part);
+            debug!(chunk_count = %self.upload_state.chunk_count, current_chunk=current_chunk, "upload chunk info");
+            self.upload_state.upload_tags.Part.push(part);
 
              
-    //         if current_chunk == self.upload_state.chunk_count{
-    //             debug!(file_name = %file.name, "upload finished");
+            if current_chunk == self.upload_state.chunk_count{
+                debug!(file_name = %file.name, "upload finished");
 
-    //             let mut buffer = Vec::new();
-    //             let mut ser = XmlSerializer::with_root(Writer::new_with_indent(&mut buffer, b' ', 4), Some("CompleteMultipartUpload"));
-    //             self.upload_state.upload_tags.serialize(&mut ser).unwrap();
-    //             let upload_tags = String::from_utf8(buffer).unwrap();
-    //             self.drive.complete_upload(file,upload_tags,oss_args,&self.upload_state.upload_id);
-    //             self.upload_state = UploadState::default();
+                let mut buffer = Vec::new();
+                let mut ser = XmlSerializer::with_root(Writer::new_with_indent(&mut buffer, b' ', 4), Some("CompleteMultipartUpload"));
+                self.upload_state.upload_tags.serialize(&mut ser).unwrap();
+                let upload_tags = String::from_utf8(buffer).unwrap();
+                self.drive.complete_upload(file,upload_tags,oss_args,&self.upload_state.upload_id);
+                self.upload_state = UploadState::default();
 
-    //         }
-    //         self.upload_state.chunk += 1;
-    //     }
-
-
-
-
-
-    //     Ok(())
-    // }
+            }
+            self.upload_state.chunk += 1;
+        }
+        Ok(())
+    }
 
 
 
@@ -717,7 +708,7 @@ impl Filesystem for PikpakDriveFileSystem {
             hash:Some(file_hash),
         };
 
-        // self.files.insert(new_file_inode, file.clone());
+        self.files.insert(new_file_inode, file.clone());
         parent_inode.add_child(name.to_os_string(), new_file_inode);
         self.inodes.insert(new_file_inode, file_inode);
         self.inodes.insert(parent, parent_inode);
