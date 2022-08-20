@@ -246,9 +246,15 @@ impl PikpakDriveFileSystem {
 
     fn prepare_for_upload(&mut self,ino: u64, fh: u64) -> Result<bool, Error> {
         info!("prepare_for_upload");
+        info!(chunk_count=self.upload_state.chunk_count, "upload_state.chunk_count");
         if self.upload_state.chunk_count == 0 {
             let size = self.upload_state.size;
             let file = self.files.get(&ino).ok_or(Error::NoEntry)?;
+
+            info!(file_id=file.id, name=%file.name, size=size, "prepare_for_upload");
+
+            info!("prepare_for_upload before fiele.id is empty");
+
 
             if !file.id.is_empty() {
                 return Ok(false);
