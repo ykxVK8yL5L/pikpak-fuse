@@ -330,9 +330,6 @@ impl PikpakDriveFileSystem {
 
 
     fn maybe_upload_chunk(&mut self,remaining: bool,ino: u64, fh: u64)-> Result<(), Error>{
-
-        info!("maybe_upload_chunk");
-
         let chunk_size = if remaining {
             // last chunk size maybe less than upload_buffer_size
             self.upload_state.buffer.remaining()
@@ -341,7 +338,6 @@ impl PikpakDriveFileSystem {
         };
         let current_chunk = self.upload_state.chunk;
 
-        info!(current_chunk=current_chunk,"maybe_upload_chunk");
 
         info!(chunk_size=chunk_size,"chunk_size is");
 
@@ -457,14 +453,21 @@ impl Filesystem for PikpakDriveFileSystem {
     }
 
     fn open(&mut self, _req: &Request<'_>, ino: u64, _flags: i32, reply: ReplyOpen) {
-        debug!(inode = ino, "open");
-
+        info!(inode = ino, "open");
         if let Some((file_id, file_name, file_size)) = self
             .files
             .get(&ino)
             .map(|f| (f.id.clone(), f.name.clone(), f.size.parse::<u64>().unwrap()))
         {
             debug!(inode = ino, name = %file_name, "open file");
+
+
+            // 忽略 macOS 上的一些特殊文件
+            if file_name == ".DS_Store" || file_name.starts_with("._") {
+                reply.error(libc::ENOENT);
+                return;
+            }
+
             let fh = self.next_fh();
             self.file_cache.open(fh, file_id, file_size);
             reply.opened(fh, 0);
@@ -697,7 +700,7 @@ impl Filesystem for PikpakDriveFileSystem {
         // 忽略 macOS 上的一些特殊文件
         let file_name = name.to_string_lossy();
         if file_name == ".DS_Store" || file_name.starts_with("._") {
-            reply.error(libc::EFAULT);
+            reply.error(libc::EEXIST);
             return;
         }
 
