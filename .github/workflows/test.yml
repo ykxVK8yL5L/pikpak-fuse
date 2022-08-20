@@ -41,24 +41,6 @@ jobs:
           manylinux: musllinux_1_1
           container: off
           args: --no-sdist --release -o dist --strip --cargo-extra-args="--no-default-features --features rustls-tls"
-      - name: Install cargo packages
-        if: matrix.platform.deb
-        run: |
-          which cargo-deb > /dev/null || cargo install --target `rustc -vV | grep host: | awk '{print $2}'` cargo-deb
-          which cargo-generate-rpm > /dev/null || cargo install --target `rustc -vV | grep host: | awk '{print $2}'` cargo-generate-rpm
-      - name: Build Debian package
-        if: matrix.platform.deb
-        run: cargo deb --target=${{ matrix.platform.target }} --no-build --no-strip
-      - name: Build RPM package
-        if: matrix.platform.deb
-        run: cargo generate-rpm --target=${{ matrix.platform.target }} --payload-compress none
-      - name: Upload wheels
-        if: matrix.platform.wheel
-        uses: actions/upload-artifact@v2
-        with:
-          name: wheels
-          path: dist
-          if-no-files-found: error
       - name: Upx compress binary
         uses: crazy-max/ghaction-upx@v1
         with:
