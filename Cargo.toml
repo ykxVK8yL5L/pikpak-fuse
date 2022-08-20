@@ -21,6 +21,7 @@ openssl-probe = { version = "0.1", optional = true }
 parking_lot = "0.12"
 reqwest = { version = "0.11", default-features = false, features = ["json", "gzip", "blocking"] }
 serde = { version = "1.0", features = ["derive"] }
+serde_json = "=1.0"
 time = { version = "0.3", features = ["formatting", "parsing"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "local-time"] }
@@ -30,6 +31,7 @@ hex-literal = "0.3.4"
 hmac-sha = "0.6"
 base64 = "0.13.0"
 httpdate = "1.0.2"
+quick-xml = { version = "0.22", features = [ "serialize" ] }
 
 [features]
 default = ["rustls-tls", "libfuse"]

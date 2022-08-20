@@ -3,22 +3,27 @@
 //! https://github.com/gz/btfs is used as a reference.
 use std::ffi::{OsStr, OsString};
 use std::path::Path;
-use std::time::{SystemTime,UNIX_EPOCH};
-use std::{collections::BTreeMap, time::Duration};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::{collections::BTreeMap};
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use httpdate;
-use hmacsha::HmacSha;
-use sha1::{Sha1, Digest};
-use hex_literal::hex;
-use base64::encode;
-
-use bytes::Bytes;
+use bytes::{Buf, BufMut, Bytes, BytesMut};
 use fuser::{
     FileAttr, FileType, Filesystem, ReplyAttr, ReplyData, ReplyDirectory,ReplyCreate, ReplyEmpty, ReplyEntry,
     ReplyOpen,ReplyWrite, Request, FUSE_ROOT_ID,
 };
-use tracing::{debug,info};
+use tracing::{debug,info,error};
+use sha1::{Sha1, Digest};
+
+use serde::de::DeserializeOwned;
+use quick_xml::de::from_str;
+use quick_xml::Writer;
+use quick_xml::se::Serializer as XmlSerializer;
+use serde_json::json;
+use serde::{Serialize,Deserialize};
+
+
+
 
 use crate::drive::{PikpakDrive, PikpakFile};
 use crate::drive::model::*;
@@ -52,6 +57,36 @@ impl Inode {
     }
 }
 
+
+#[derive(Debug, Clone)]
+struct UploadState {
+    size: u64,
+    buffer: BytesMut,
+    chunk_count: u64,
+    chunk: u64,
+    upload_id: String,
+    oss_args: Option<OssArgs>,
+    sha1: Option<String>,
+    upload_tags:CompleteMultipartUpload,
+}
+
+impl Default for UploadState {
+    fn default() -> Self {
+        let mut upload_tags = CompleteMultipartUpload{Part:vec![]};
+        Self {
+            size: 0,
+            buffer: BytesMut::new(),
+            chunk_count: 0,
+            chunk: 1,
+            upload_id: String::new(),
+            oss_args: None,
+            sha1: None,
+            upload_tags: upload_tags,
+        }
+    }
+}
+
+
 pub struct PikpakDriveFileSystem {
     drive: PikpakDrive,
     file_cache: FileCache,
@@ -59,14 +94,12 @@ pub struct PikpakDriveFileSystem {
     inodes: BTreeMap<u64, Inode>,
     next_inode: u64,
     next_fh: AtomicU64,
-    oss_args: Option<OssArgs>,
-    upload_tags:CompleteMultipartUpload,
+    upload_state: UploadState,
 }
 
 impl PikpakDriveFileSystem {
     pub fn new(drive: PikpakDrive, read_buffer_size: usize) -> Self {
         let file_cache = FileCache::new(drive.clone(), read_buffer_size);
-        let mut upload_tags = CompleteMultipartUpload{Part:vec![]};
         Self {
             drive,
             file_cache,
@@ -74,8 +107,7 @@ impl PikpakDriveFileSystem {
             inodes: BTreeMap::new(),
             next_inode: 1,
             next_fh: AtomicU64::new(1),
-            oss_args:None,
-            upload_tags:upload_tags,
+            upload_state: UploadState::default(),
         }
     }
 
@@ -210,6 +242,141 @@ impl PikpakDriveFileSystem {
         let size = std::cmp::min(size, file.size.parse::<u64>().unwrap().saturating_sub(offset as u64) as u32);
         self.file_cache.read(fh, offset, size)
     }
+
+
+
+    fn prepare_for_upload(&mut self,ino: u64, fh: u64) -> Result<bool, Error> {
+        if self.upload_state.chunk_count == 0 {
+            let size = self.upload_state.size;
+            let file = self.files.get(&ino).ok_or(Error::NoEntry)?;
+
+            if !file.id.is_empty() {
+                if let Some(content_hash) = file.hash.as_ref() {
+                    if let Some(sha1) = self.upload_state.sha1.as_ref() {
+                        if content_hash.eq_ignore_ascii_case(sha1) {
+                            return Ok(false);
+                        }
+                    }
+                }
+            }
+            // TODO: create parent folders?
+
+            let upload_buffer_size = BLOCK_SIZE as u64;
+            let chunk_count =
+                size / upload_buffer_size + if size % upload_buffer_size != 0 { 1 } else { 0 };
+            self.upload_state.chunk_count = chunk_count;
+            debug!("uploading {} ({} bytes)...", file.name, size);
+            if size>0 {
+                let hash = file.clone().hash.unwrap();
+                let res = self
+                    .drive
+                    .create_file_with_proof(&file.name, &file.parent_id, &hash, size, chunk_count);
+            
+                let upload_response = match res {
+                    Ok(upload_response_info) => upload_response_info,
+                    Err(err) => {
+                        error!(file_name = file.name, error = %err, "create file with proof failed");
+                        return Ok(false);
+                    }
+                };
+
+                let oss_args = OssArgs {
+                    bucket: upload_response.resumable.params.bucket.to_string(),
+                    key: upload_response.resumable.params.key.to_string(),
+                    endpoint: upload_response.resumable.params.endpoint.to_string(),
+                    access_key_id: upload_response.resumable.params.access_key_id.to_string(),
+                    access_key_secret: upload_response.resumable.params.access_key_secret.to_string(),
+                    security_token: upload_response.resumable.params.security_token.to_string(),
+                };
+                self.upload_state.oss_args = Some(oss_args);
+    
+                let oss_args = self.upload_state.oss_args.as_ref().unwrap();
+                let pre_upload_info = self.drive.get_pre_upload_info(&oss_args);
+                if let Err(err) = pre_upload_info {
+                    error!(file_name = file.name, error = %err, "get pre upload info failed");
+                    return Ok(false);
+                }
+               
+                self.upload_state.upload_id = match pre_upload_info {
+                    Ok(upload_id) => upload_id,
+                    Err(err) => {
+                        error!(file_name = file.name, error = %err, "get pre upload info failed");
+                        return Ok(false);
+                    }
+                };
+                debug!(file_name = file.name, upload_id = %self.upload_state.upload_id, "pre upload info get upload_id success");
+            }
+        }
+        Ok(true)
+    }
+
+
+    fn maybe_upload_chunk(&mut self,remaining: bool,ino: u64, fh: u64)-> Result<(), Error>{
+        let chunk_size = if remaining {
+            // last chunk size maybe less than upload_buffer_size
+            self.upload_state.buffer.remaining()
+        } else {
+            BLOCK_SIZE as usize
+        };
+        let current_chunk = self.upload_state.chunk;
+
+        if chunk_size > 0
+            && self.upload_state.buffer.remaining() >= chunk_size
+            && current_chunk <= self.upload_state.chunk_count
+        {
+            let file = self.files.get(&ino).ok_or(Error::NoEntry)?;
+            let chunk_data = self.upload_state.buffer.split_to(chunk_size);
+
+            let upload_data = chunk_data.freeze();
+            let oss_args = match self.upload_state.oss_args.as_ref() {
+                Some(oss_args) => oss_args,
+                None => {
+                    error!(file_name = %file.name, "获取文件上传信息错误");
+                    return Err(Error::UploadFailed);
+                }
+            };
+            let res = self.drive.upload_chunk(file,oss_args,&self.upload_state.upload_id,current_chunk,upload_data.clone());
+            
+            let part = match res {
+                Ok(part) => part,
+                Err(err) => {
+                    error!(file_name = %file.name, error = %err, "上传分片失败，无法获取ETag");
+                    return Err(Error::UploadFailed);
+                }
+            };
+                
+
+
+
+
+            debug!(chunk_count = %self.upload_state.chunk_count, current_chunk=current_chunk, "upload chunk info");
+            self.upload_state.upload_tags.Part.push(part);
+
+             
+            if current_chunk == self.upload_state.chunk_count{
+                debug!(file_name = %file.name, "upload finished");
+
+                let mut buffer = Vec::new();
+                let mut ser = XmlSerializer::with_root(Writer::new_with_indent(&mut buffer, b' ', 4), Some("CompleteMultipartUpload"));
+                self.upload_state.upload_tags.serialize(&mut ser).unwrap();
+                let upload_tags = String::from_utf8(buffer).unwrap();
+                self.drive.complete_upload(file,upload_tags,oss_args,&self.upload_state.upload_id);
+                self.upload_state = UploadState::default();
+
+            }
+            self.upload_state.chunk += 1;
+        }
+
+
+
+
+
+        Ok(())
+    }
+
+
+
+
     
 }
 
@@ -273,6 +440,7 @@ impl Filesystem for PikpakDriveFileSystem {
 
     fn open(&mut self, _req: &Request<'_>, ino: u64, _flags: i32, reply: ReplyOpen) {
         debug!(inode = ino, "open");
+
         if let Some((file_id, file_name, file_size)) = self
             .files
             .get(&ino)
@@ -300,8 +468,6 @@ impl Filesystem for PikpakDriveFileSystem {
     ) {
         debug!(inode = ino, fh = fh, "release file");
         let mut upload_tags = CompleteMultipartUpload{Part:vec![]};
-        self.upload_tags = upload_tags;
-        self.oss_args = None;
         self.file_cache.release(fh);
         reply.ok();
     }
@@ -487,6 +653,8 @@ impl Filesystem for PikpakDriveFileSystem {
             return;
         }
 
+        let new_file_inode = self.next_inode();
+        let file_inode = Inode::new(new_file_inode);
         let mut parent_inode = self.inodes.get(&parent).ok_or(Error::NoEntry).unwrap().clone();
         let parent_file = match self.files.get(&parent).ok_or(Error::NoEntry){
             Ok(file) => file,
@@ -522,14 +690,11 @@ impl Filesystem for PikpakDriveFileSystem {
             medias:Vec::new(),
             hash:Some(file_hash),
         };
-        let new_file_inode = self.next_inode();
-        let attrs = file.to_file_attr(new_file_inode);
 
-        // self.files.insert(new_file_inode, file);
+        // self.files.insert(new_file_inode, file.clone());
         // parent_inode.add_child(name.to_os_string(), new_file_inode);
+        // self.inodes.insert(new_file_inode, file_inode);
         // self.inodes.insert(parent, parent_inode);
-        // info!(new_file_indode=new_file_inode, "create new file inode is");
-        // info!(parent_ino=parent, "parent ino is");
 
         let (read, write) = match flags & libc::O_ACCMODE {
             libc::O_RDONLY => (true, false),
@@ -541,17 +706,14 @@ impl Filesystem for PikpakDriveFileSystem {
                 return;
             }
         };
-
-        reply.created(&TTL, &attrs, 0,self.allocate_next_file_handle(read, write), 0);
-
-        // reply.created(
-        //     &TTL,
-        //     &attrs.into(),
-        //     0,
-        //     self.allocate_next_file_handle(read, write),
-        //     0,
-        // );
-
+        let attrs = file.to_file_attr(new_file_inode);
+        reply.created(
+            &Duration::new(0, 0),
+            &attrs.into(),
+            0,
+            self.allocate_next_file_handle(read, write),
+            0,
+        );
 
     }
 
@@ -579,6 +741,35 @@ impl Filesystem for PikpakDriveFileSystem {
         reply.ok()
     }
 
+    fn flush(&mut self, _req: &Request<'_>, ino: u64, fh: u64, lock_owner: u64, reply: ReplyEmpty) {
+        debug!("flush() called with {:?} {:?}", ino, fh);
+        // let fluse_file = match self.files.get(&ino) {
+        //     Some(file) => file,
+        //     None => {
+        //         reply.error(libc::ENOENT);
+        //         return;
+        //     }
+        // };
+        // info!(file_name=fluse_file.name, "flush file is");
+        reply.ok();
+
+    //    match self.prepare_for_upload(ino, fh){
+    //         Ok(true) => {
+    //             self.maybe_upload_chunk(true,ino, fh);
+    //             reply.ok();
+    //             return;
+    //         }
+    //         Ok(false) => {
+    //             reply.error(libc::EFAULT);
+    //             return;
+    //         }
+    //         Err(e) => {
+    //             reply.error(e.into());
+    //             return;
+    //         }
+    //     }
+    }
+
     fn write(
             &mut self,
             _req: &Request<'_>,
@@ -591,8 +782,26 @@ impl Filesystem for PikpakDriveFileSystem {
             lock_owner: Option<u64>,
             reply: ReplyWrite,
         ) {
-        info!("write() called with {:?} {:?}", ino, fh);
+        debug!("write() called with {:?} {:?}", ino, fh);
+
+        // match self.prepare_for_upload(ino, fh){
+        //     Ok(true) => {
+        //         //self.upload_state.buffer.extend_from_slice(&buf);
+        //         self.maybe_upload_chunk(false,ino, fh);
+        //         reply.written(data.len() as u32);
+        //         return;
+        //     }
+        //     Ok(false) => {
+        //         reply.error(libc::EFAULT);
+        //         return;
+        //     }
+        //     Err(e) => {
+        //         reply.error(e.into());
+        //         return;
+        //     }
+        // }
         reply.written(data.len() as u32);
+       
     }
 
 
@@ -607,7 +816,6 @@ impl PikpakFile {
             FileType::RegularFile
         };
         
-    
         let perm = if matches!(kind, FileType::Directory) {
             0o755
         } else {

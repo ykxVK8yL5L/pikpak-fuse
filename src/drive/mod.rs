@@ -3,7 +3,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration,SystemTime, UNIX_EPOCH};
 
 use anyhow::{bail, Context, Result};
 use bytes::Bytes;
@@ -12,9 +12,22 @@ use reqwest::{
     header::{HeaderMap, HeaderValue},
     StatusCode,
 };
+use url::form_urlencoded;
 use serde::de::DeserializeOwned;
-use serde::Serialize;
+use quick_xml::de::from_str;
+use quick_xml::Writer;
+use quick_xml::se::Serializer as XmlSerializer;
+use serde_json::json;
+use serde::{Serialize,Deserialize};
 use tracing::{debug, error, info, warn};
+use httpdate;
+use hmacsha::HmacSha;
+use sha1::{Sha1, Digest};
+use hex_literal::hex;
+use base64::encode;
+
+
+
 
 pub mod model;
 
@@ -507,7 +520,153 @@ impl PikpakDrive {
         self.post_request(rurl,&req).and_then(|res| res.context("expect response"))
     }
 
+    pub fn create_file_with_proof(&self,name: &str, parent_file_id: &str, hash:&str, size: u64,chunk_count: u64) ->  Result<UploadResponse> {
+        let url = format!("{}",self.config.api_base_url);
+        let req = UploadRequest{
+            kind:"drive#file".to_string(),
+		    name:name.to_string(),
+		    size:size,
+		    hash: hash.to_string(),
+		    upload_type: "UPLOAD_TYPE_RESUMABLE".to_string(),
+            objProvider: ObjProvider { provider: "UPLOAD_TYPE_UNKNOWN".to_string() },
+		    parent_id:parent_file_id.to_string(),
+        };
+        let payload = serde_json::to_string(&req).unwrap();
+        let access_token_key = "access_token".to_string();
+        let access_token = self.access_token().unwrap();
 
+        let res = self.client.post(url)
+            .header(reqwest::header::CONTENT_LENGTH, payload.len())
+            .header(reqwest::header::HOST, "api-drive.mypikpak.com")
+            .header(reqwest::header::AUTHORIZATION, format!("Bearer {}",access_token))
+            .body(payload)
+            .send();
+
+        let body = match res {
+            Ok(res) => res.text().unwrap(),
+            Err(err) => {
+                error!("{:?}", err);
+                return Err(err.into());
+            }
+        };
+            
+        let result = match serde_json::from_str::<UploadResponse>(&body) {
+            Ok(result) => result,
+            Err(e) => {
+                error!(error = %e, "create_file_with_proof");
+                return Err(e.into());
+            }
+        };
+    
+        Ok(result)
+    }
+
+
+    pub fn get_pre_upload_info(&self,oss_args:&OssArgs) -> Result<String> {
+        let mut url = format!("https://{}/{}?uploads",oss_args.endpoint,oss_args.key);
+        let now = SystemTime::now();
+        let gmt = httpdate::fmt_http_date(now);
+        let mut req = self.client.post(url)
+            .header(reqwest::header::USER_AGENT, "aliyun-sdk-android/2.9.5(Linux/Android 11/ONEPLUS%20A6000;RKQ1.201217.002)")
+            .header(reqwest::header::CONTENT_TYPE, "application/octet-stream")
+            .header("X-Oss-Security-Token", &oss_args.security_token)
+            .header("Date", &gmt).build()?;
+        let oss_sign:String = self.hmac_authorization(&req,&gmt,oss_args);
+        let oss_header = format!("OSS {}:{}",&oss_args.access_key_id,&oss_sign);
+        let header_auth = HeaderValue::from_str(&oss_header).unwrap();
+        req.headers_mut().insert(reqwest::header::AUTHORIZATION, header_auth);
+        let res = self.client.execute(req);
+        let body = match res {
+            Ok(res) => res.text().unwrap(),
+            Err(err) => {
+                error!("{:?}", err);
+                return Err(err.into());
+            }
+        };
+        let result: InitiateMultipartUploadResult = from_str(&body).unwrap();
+        Ok(result.UploadId.clone())
+    }
+
+
+
+
+
+
+    pub fn upload_chunk(&self, file:&PikpakFile, oss_args:&OssArgs, upload_id:&str, current_chunk:u64,body: Bytes) -> Result<(PartInfo)> {
+        debug!(file_name=%file.name,upload_id = upload_id,current_chunk=current_chunk, "upload_chunk");
+        let encoded: String = form_urlencoded::Serializer::new(String::new())
+        .append_pair("partNumber", current_chunk.to_string().as_str())
+        .append_pair("uploadId", upload_id)
+        .finish();
+
+        let url = format!("https://{}/{}?{}",oss_args.endpoint,oss_args.key,encoded);
+   
+        let now = SystemTime::now();
+        let gmt = httpdate::fmt_http_date(now);
+        let mut req = self.client.put(url)
+            .body(body)
+            .header(reqwest::header::CONTENT_TYPE, "application/octet-stream")
+            .header("X-Oss-Security-Token", &oss_args.security_token)
+            .header("Date", &gmt).build()?;
+        let oss_sign:String = self.hmac_authorization(&req,&gmt,oss_args);
+        let oss_header = format!("OSS {}:{}",&oss_args.access_key_id,&oss_sign);
+        let header_auth = HeaderValue::from_str(&oss_header).unwrap();
+        req.headers_mut().insert(reqwest::header::AUTHORIZATION, header_auth);
+        let res = self.client.execute(req);
+        // let body = match res {
+        //     Ok(res) => res.text().unwrap(),
+        //     Err(err) => {
+        //         error!("{:?}", err);
+        //         return Err(err.into());
+        //     }
+        // };
+        //let body = &res.text().await?;
+
+        let etag  = match &res.unwrap().headers().get("ETag") {
+            Some(etag) => etag.to_str().unwrap().to_string(),
+            None => "".to_string(),
+        };
+            
+        let part = PartInfo {
+            PartNumber: PartNumber { PartNumber: current_chunk },
+            ETag: etag,
+        };
+        
+        Ok(part)
+    }
+
+
+    pub fn complete_upload(&self,file:&PikpakFile, upload_tags:String, oss_args:&OssArgs, upload_id:&str)-> Result<()> {
+        info!(file = %file.name, "complete_upload");
+        let url = format!("https://{}/{}?uploadId={}",oss_args.endpoint,oss_args.key,upload_id);
+        let now = SystemTime::now();
+        let gmt = httpdate::fmt_http_date(now);
+        let mut req = self.client.post(url)
+            .body(upload_tags)
+            .header(reqwest::header::CONTENT_TYPE, "application/octet-stream")
+            .header("X-Oss-Security-Token", &oss_args.security_token)
+            .header("Date", &gmt).build()?;
+        let oss_sign:String = self.hmac_authorization(&req,&gmt,oss_args);
+        let oss_header = format!("OSS {}:{}",&oss_args.access_key_id,&oss_sign);
+        let header_auth = HeaderValue::from_str(&oss_header).unwrap();
+        req.headers_mut().insert(reqwest::header::AUTHORIZATION, header_auth);
+        let res = self.client.execute(req);
+
+        Ok(())
+    }
+
+
+
+
+    pub fn hmac_authorization(&self, req:&reqwest::blocking::Request,time:&str,oss_args:&OssArgs)->String{
+        let message = format!("{}\n\n{}\n{}\nx-oss-security-token:{}\n/{}{}?{}",req.method().as_str(),req.headers().get(reqwest::header::CONTENT_TYPE).unwrap().to_str().unwrap(),time,oss_args.security_token,oss_args.bucket,req.url().path(),req.url().query().unwrap());
+        let key = &oss_args.access_key_secret;
+      
+        let mut hasher = HmacSha::from(key, &message, Sha1::default());
+        let result = hasher.compute_digest();
+        let signature_base64 = base64::encode(&result);
+        signature_base64
+    }
 
 
 
