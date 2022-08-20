@@ -401,7 +401,7 @@ impl Filesystem for PikpakDriveFileSystem {
         info!(file_name = file_name, "lookup for macos special file");
 
         if file_name == ".DS_Store" || file_name.starts_with("._") || file_name.starts_with(".") {
-            reply.error(libc::ENOENT);
+            //reply.error(libc::ENOENT);
             return ;
         }
         
@@ -459,7 +459,7 @@ impl Filesystem for PikpakDriveFileSystem {
             debug!(inode = ino, name = %file_name, "open file");
             // 忽略 macOS 上的一些特殊文件
             if file_name == ".DS_Store" || file_name.starts_with("._") {
-                reply.error(libc::ENOENT);
+                //reply.error(libc::ENOENT);
                 return;
             }
 
@@ -696,7 +696,7 @@ impl Filesystem for PikpakDriveFileSystem {
         // 忽略 macOS 上的一些特殊文件
         let file_name = name.to_string_lossy();
         if file_name == ".DS_Store" || file_name.starts_with("._") {
-            reply.error(libc::EEXIST);
+            //reply.error(libc::EEXIST);
             return;
         }
 
