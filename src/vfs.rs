@@ -251,9 +251,7 @@ impl PikpakDriveFileSystem {
             info!("prepare_for_upload after chunk_count==0");
             let size = self.upload_state.size;
             info!("prepare_for_upload after get upload_state.size");
-            let file = self.files.get(&ino).ok_or(Error::NoEntry)?;
-
-
+            
             let file = match self.files.get(&ino) {
                 Some(file) => file,
                 None => {
