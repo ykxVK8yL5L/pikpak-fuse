@@ -251,7 +251,6 @@ impl PikpakDriveFileSystem {
             info!("prepare_for_upload after chunk_count==0");
             let size = self.upload_state.size;
             info!("prepare_for_upload after get upload_state.size");
-            
             let file = match self.files.get(&ino) {
                 Some(file) => file,
                 None => {
@@ -259,22 +258,13 @@ impl PikpakDriveFileSystem {
                     return Err(Error::NoEntry)
                 }
             };
-
-
             info!(file_id=file.id, name=%file.name, size=size, "prepare_for_upload");
-
             info!("prepare_for_upload before fiele.id is empty");
-
-
             if !file.id.is_empty() {
                 return Ok(false);
             }
             // TODO: create parent folders?
-
-
             info!("prepare_for_upload after upload_state.chunk_count==0");
-
-
             let upload_buffer_size = BLOCK_SIZE as u64;
             let chunk_count =
                 size / upload_buffer_size + if size % upload_buffer_size != 0 { 1 } else { 0 };
@@ -342,9 +332,7 @@ impl PikpakDriveFileSystem {
         info!(chunk_size=chunk_size,"chunk_size is");
 
 
-        if chunk_size > 0
-            && self.upload_state.buffer.remaining() >= chunk_size
-            && current_chunk <= self.upload_state.chunk_count
+        if chunk_size > 0  && current_chunk <= self.upload_state.chunk_count
         {
             info!("maybe_upload_chunk after chunk_size>0");
             let file = self.files.get(&ino).ok_or(Error::NoEntry)?;
