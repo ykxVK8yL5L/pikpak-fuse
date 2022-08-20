@@ -690,10 +690,10 @@ impl Filesystem for PikpakDriveFileSystem {
             hash:Some(file_hash),
         };
 
-        // self.files.insert(new_file_inode, file.clone());
-        // parent_inode.add_child(name.to_os_string(), new_file_inode);
-        // self.inodes.insert(new_file_inode, file_inode);
-        // self.inodes.insert(parent, parent_inode);
+        self.files.insert(new_file_inode, file.clone());
+        parent_inode.add_child(name.to_os_string(), new_file_inode);
+        self.inodes.insert(new_file_inode, file_inode);
+        self.inodes.insert(parent, parent_inode);
 
         let (read, write) = match flags & libc::O_ACCMODE {
             libc::O_RDONLY => (true, false),
