@@ -248,8 +248,20 @@ impl PikpakDriveFileSystem {
         info!("prepare_for_upload");
         info!(chunk_count=self.upload_state.chunk_count, "upload_state.chunk_count");
         if self.upload_state.chunk_count == 0 {
+            info!("prepare_for_upload after chunk_count==0");
             let size = self.upload_state.size;
+            info!("prepare_for_upload after get upload_state.size");
             let file = self.files.get(&ino).ok_or(Error::NoEntry)?;
+
+
+            let file = match self.files.get(&ino) {
+                Some(file) => file,
+                None => {
+                    error!(inode = ino, "file not found");
+                    return Err(Error::NoEntry)
+                }
+            };
+
 
             info!(file_id=file.id, name=%file.name, size=size, "prepare_for_upload");
 
@@ -693,9 +705,8 @@ impl Filesystem for PikpakDriveFileSystem {
                 return;
             }
         };
+
         let parent_file_id = parent_file.id.clone();
-        
-      
         let file_name =name.to_string_lossy().to_string();
         let now = SystemTime::now();
         let hash_str = format!("{}{}",&file_name,now.duration_since(UNIX_EPOCH).unwrap().as_secs());
@@ -703,8 +714,6 @@ impl Filesystem for PikpakDriveFileSystem {
         hasher.update(hash_str.as_bytes());
         let hash_code = hasher.finalize();
         let file_hash = format!("{:X}",&hash_code);
-
-        
         let file = PikpakFile {
             name: file_name,
             kind: "drive#file".to_string(),
@@ -722,6 +731,10 @@ impl Filesystem for PikpakDriveFileSystem {
         };
 
         self.files.insert(new_file_inode, file.clone());
+
+        info!("self.files.insert file {:?}", file);
+
+
         parent_inode.add_child(name.to_os_string(), new_file_inode);
         self.inodes.insert(new_file_inode, file_inode);
         self.inodes.insert(parent, parent_inode);
@@ -737,20 +750,11 @@ impl Filesystem for PikpakDriveFileSystem {
             }
         };
         let attrs = file.to_file_attr(new_file_inode);
-
-
-
-        let fh = self.allocate_next_file_handle(read, write);
-
-        info!("create() created file {:?}", fh);
-        info!("create() created flags {:?}", flags);
-
-
         reply.created(
             &Duration::new(0, 0),
             &attrs.into(),
             0,
-            fh,
+            self.allocate_next_file_handle(read, write),
             0,
         );
 
