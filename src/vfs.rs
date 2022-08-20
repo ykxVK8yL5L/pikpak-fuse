@@ -408,6 +408,16 @@ impl Filesystem for PikpakDriveFileSystem {
 
     fn lookup(&mut self, _req: &Request<'_>, parent: u64, name: &OsStr, reply: ReplyEntry) {
         let dirname = Path::new(name);
+        // 忽略 macOS 上的一些特殊文件
+        let file_name = name.to_string_lossy().to_string();
+        info!(file_name = file_name, "lookup for macos special file");
+
+        if file_name == ".DS_Store" || file_name.starts_with("._") {
+            reply.error(libc::ENOENT);
+            return ;
+        }
+        
+
         debug!(parent = parent, name = %dirname.display(), "lookup");
         match self.lookup(parent, name) {
             Ok(attr) => reply.entry(&TTL, &attr, 0),
@@ -460,8 +470,6 @@ impl Filesystem for PikpakDriveFileSystem {
             .map(|f| (f.id.clone(), f.name.clone(), f.size.parse::<u64>().unwrap()))
         {
             debug!(inode = ino, name = %file_name, "open file");
-
-
             // 忽略 macOS 上的一些特殊文件
             if file_name == ".DS_Store" || file_name.starts_with("._") {
                 reply.error(libc::ENOENT);
@@ -476,6 +484,7 @@ impl Filesystem for PikpakDriveFileSystem {
             reply.error(libc::ENOENT);
         }
     }
+
 
     fn release(
         &mut self,
@@ -773,9 +782,6 @@ impl Filesystem for PikpakDriveFileSystem {
         );
 
     }
-
-
-
 
 
     fn unlink(&mut self, _req: &Request<'_>, parent: u64, name: &OsStr, reply: ReplyEmpty) {
