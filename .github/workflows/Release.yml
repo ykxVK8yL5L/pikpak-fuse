@@ -224,8 +224,8 @@ jobs:
       - name: Archive binary
         run: |
           cd target/${{ matrix.platform.target }}/release
-          tar czvf pikpak-fuse-${{ steps.tag.outputs.tag }}.${{ matrix.platform.target }}.tar.gz pikpak-fuse
-          shasum -a 256 pikpak-fuse-${{ steps.tag.outputs.tag }}.${{ matrix.platform.target }}.tar.gz > pikpak-fuse-${{ steps.tag.outputs.tag }}.${{ matrix.platform.target }}.tar.gz.sha256
+          tar czvf pikpak-fuse-${{ github.event.inputs.tag }}.${{ matrix.platform.target }}.tar.gz pikpak-fuse
+          shasum -a 256 pikpak-fuse-${{ github.event.inputs.tag }}.${{ matrix.platform.target }}.tar.gz > pikpak-fuse-${{ github.event.inputs.tag }}.${{ matrix.platform.target }}.tar.gz.sha256
           cd -
       - name: Upload binary to GitHub Release
         uses: svenstaro/upload-release-action@v2
