@@ -810,10 +810,10 @@ impl Filesystem for PikpakDriveFileSystem {
                 reply.ok();
             }
             Ok(false) => {
-                reply.error(libc::EINVAL);
+                reply.error(libc::ENOENT);
             }
             Err(err) => {
-                reply.error(libc::EFAULT);
+                reply.error(libc::ENOENT);
             }
         }
     }
@@ -843,10 +843,10 @@ impl Filesystem for PikpakDriveFileSystem {
                 reply.written(data.len() as u32 );
             }
             Ok(false) => {
-                reply.error(libc::EINVAL);
+                reply.error(libc::ENOENT);
             }
             Err(err) => {
-                reply.error(libc::EFAULT);
+                reply.error(libc::ENOENT);
             }
         }
     }
