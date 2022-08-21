@@ -819,8 +819,9 @@ impl Filesystem for PikpakDriveFileSystem {
         reply.ok()
     }
 
-    // fn flush(&mut self, _req: &Request<'_>, ino: u64, fh: u64, lock_owner: u64, reply: ReplyEmpty) {
-    //     info!("flush() called with {:?} {:?}", ino, fh);
+    fn flush(&mut self, _req: &Request<'_>, ino: u64, fh: u64, lock_owner: u64, reply: ReplyEmpty) {
+        info!("flush() called with {:?} {:?}", ino, fh);
+        reply.ok();
     //    match self.prepare_for_upload(ino, fh){
     //         Ok(true) => {
     //             self.maybe_upload_chunk(true,ino, fh);
@@ -836,7 +837,7 @@ impl Filesystem for PikpakDriveFileSystem {
     //             return;
     //         }
     //     }
-    // }
+    }
 
     fn write(
             &mut self,
@@ -870,7 +871,6 @@ impl Filesystem for PikpakDriveFileSystem {
                     return;
                 }
             };
-
             println!("{}",serde_json::to_string(&upload_response).unwrap());
 
             let oss_args = OssArgs {
