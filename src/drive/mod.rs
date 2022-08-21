@@ -679,6 +679,7 @@ impl PikpakDrive {
 
 
     pub fn download(&self, url: &str, start_pos: u64, size: usize) -> Result<Bytes> {
+        info!(url = %url, "download file");
         use reqwest::header::RANGE;
         let end_pos = start_pos + size as u64 - 1;
         debug!(url = %url, start = start_pos, end = end_pos, "download file");
@@ -694,26 +695,11 @@ impl PikpakDrive {
 
     pub fn get_download_url(&self, file_id: &str) -> Result<String> {
         debug!(file_id = %file_id, "get download url");
-        // let req = GetFileDownloadUrlRequest {
-        //     drive_id: self.drive_id()?,
-        //     file_id,
-        // };
-        // let res: GetFileDownloadUrlResponse = self
-        //     .request(
-        //         format!("{}/v2/file/get_download_url", self.config.api_base_url),
-        //         &req,
-        //     )?
-        //     .context("expect response")?;
-
         let mut rurl = format!("{}/{}",self.config.api_base_url,file_id.to_string());
         let url = rurl;
         let mut data = HashMap::new();
         data.insert("file_id", file_id);
         let res: PikpakFile = self.request(url,&data)?.context("expect response")?;
-
-        info!(file_id = %file_id, url = %res.web_content_link, "get download url");
-
-
         if res.mime_type.contains("video/"){
             Ok(res.medias[0].link.url.clone())
         }else{
