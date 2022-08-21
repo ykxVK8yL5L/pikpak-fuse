@@ -266,9 +266,17 @@ impl PikpakDriveFileSystem {
                 return Err(Error::NoEntry)
             }
         };
+
         if !file.id.is_empty() {
             return Ok(false);
         }
+
+        // 忽略 macOS 上的一些特殊文件
+        if file.name == ".DS_Store" || file.name.starts_with(".") {
+            return Ok(false);
+        }
+
+
         if self.upload_state.chunk_count == 0 {
             let size = self.upload_state.size;
             debug!(file_id=file.id, name=%file.name, size=size, "prepare_for_upload");
