@@ -655,6 +655,16 @@ impl PikpakDrive {
         req.headers_mut().insert(reqwest::header::AUTHORIZATION, header_auth);
         let res = self.client.execute(req);
 
+        let body = match res {
+            Ok(res) => res.text().unwrap(),
+            Err(err) => {
+                error!("{:?}", err);
+                return Err(err.into());
+            }
+        };
+
+        info!(file = %file.name, res_body = body, "complete_upload_response");
+
         Ok(())
     }
 
