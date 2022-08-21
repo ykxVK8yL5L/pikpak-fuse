@@ -51,10 +51,10 @@ fn main() -> anyhow::Result<()> {
 
     tracing_subscriber::registry()
     .with(fmt::layer())
-    .with(EnvFilter::from_env("PIKPAK_FUSE"))
+    .with(EnvFilter::from_env("PIKPAK_FUSE_LOG"))
     .init();
-    if env::var("PIKPAK_FUSE").is_err() {
-       env::set_var("PIKPAK_FUSE", "pikpak_fuse=info");
+    if env::var("PIKPAK_FUSE_LOG").is_err() {
+       env::set_var("PIKPAK_FUSE_LOG", "pikpak_fuse=info");
     }
 
     let opt = Opt::parse();

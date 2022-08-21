@@ -304,8 +304,8 @@ impl PikpakDriveFileSystem {
                     }
                 };
 
-                file.id = upload_response.file.id.clone();
-                self.files.insert(ino, file.clone());
+                // file.id = upload_response.file.id.clone();
+                // self.files.insert(ino, file.clone());
 
                 debug!(file_name = upload_response.file.name, "upload response name");
                 let oss_args = OssArgs {

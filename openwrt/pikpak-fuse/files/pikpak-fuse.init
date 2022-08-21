@@ -39,7 +39,7 @@ start_service() {
 
       case $(uci_get_by_type default debug) in
         1|on|true|yes|enabled)
-          procd_append_param env PIKPAK_FUSE="pikpak_fuse=debug" ;;
+          procd_append_param env PIKPAK_FUSE_LOG="pikpak_fuse=debug" ;;
         *) ;;
       esac
       procd_close_instance ;;
