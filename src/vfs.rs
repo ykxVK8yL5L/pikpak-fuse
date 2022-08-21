@@ -259,7 +259,7 @@ impl PikpakDriveFileSystem {
 
     fn prepare_for_upload(&mut self,ino: u64, fh: u64) -> Result<bool, Error> {
         debug!(chunk_count=self.upload_state.chunk_count, " prepare_for_upload upload_state.chunk_count");
-        let mut file = match self.files.get(&ino) {
+        let file = match self.files.get(&ino) {
             Some(file) => file.clone(),
             None => {
                 error!(inode = ino, "file not found");
@@ -285,9 +285,13 @@ impl PikpakDriveFileSystem {
             }
             // TODO: create parent folders?
             debug!("prepare_for_upload after upload_state.chunk_count==0");
-            let upload_buffer_size = BLOCK_SIZE as u64;
+            let upload_buffer_size = UPLOAD_BUFFER_SIZE as u64;
             let chunk_count =
                 size / upload_buffer_size + if size % upload_buffer_size != 0 { 1 } else { 0 };
+
+            info!(chunk_count=chunk_count, "prepare_for_upload chunk_count");
+
+
             self.upload_state.chunk_count = chunk_count;
             debug!("uploading {} ({} bytes)...", file.name, size);
             if size>0 {
@@ -304,9 +308,7 @@ impl PikpakDriveFileSystem {
                     }
                 };
 
-                // file.id = upload_response.file.id.clone();
-                // self.files.insert(ino, file.clone());
-
+            
                 debug!(file_name = upload_response.file.name, "upload response name");
                 let oss_args = OssArgs {
                     bucket: upload_response.resumable.params.bucket.to_string(),
@@ -351,6 +353,7 @@ impl PikpakDriveFileSystem {
         debug!(chunk_size=chunk_size,"chunk_size is");
         debug!(upload_state_buffer_remaining=self.upload_state.buffer.remaining(),"buffer remaining is");
         debug!(current_chunk=current_chunk,"current_chunk is");
+        info!(chunk_count=self.upload_state.chunk_count, "chunk_count is");
 
         if chunk_size > 0
         && self.upload_state.buffer.remaining() >= chunk_size
@@ -384,6 +387,10 @@ impl PikpakDriveFileSystem {
              
             if current_chunk == self.upload_state.chunk_count{
                 debug!(file_name = %file.name, "upload finished");
+                
+                // file.id = upload_response.file.id.clone();
+                // self.files.insert(ino, file.clone());
+
                 let mut buffer = Vec::new();
                 let mut ser = XmlSerializer::with_root(Writer::new_with_indent(&mut buffer, b' ', 4), Some("CompleteMultipartUpload"));
                 self.upload_state.upload_tags.serialize(&mut ser).unwrap();

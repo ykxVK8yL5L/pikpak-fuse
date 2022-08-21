@@ -680,7 +680,6 @@ impl PikpakDrive {
 
     pub fn download(&self, url: &str, start_pos: u64, size: usize) -> Result<Bytes> {
         use reqwest::header::RANGE;
-
         let end_pos = start_pos + size as u64 - 1;
         debug!(url = %url, start = start_pos, end = end_pos, "download file");
         let range = format!("bytes={}-{}", start_pos, end_pos);
