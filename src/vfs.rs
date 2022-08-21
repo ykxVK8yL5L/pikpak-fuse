@@ -402,7 +402,7 @@ impl Filesystem for PikpakDriveFileSystem {
         debug!(file_name = file_name, "lookup for macos special file");
 
         if file_name == ".DS_Store" || file_name.starts_with("._") || file_name.starts_with(".") {
-            //reply.error(libc::ENOENT);
+            reply.error(libc::ENOENT);
             return ;
         }
         
