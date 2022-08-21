@@ -1,6 +1,7 @@
+# 这玩意请求服务器次数太多  很慢 不建议使用 还是使用webdav吧
 # docker: https://hub.docker.com/r/ykxvk8yl5l/pikpak-fuse
 # 演示视频: https://youtu.be/fl1Lp1_1AR4
-# 基本完成  Mac系统上上传文件会闪退，依赖问题已经提交issue有反馈会尽快解决     
+# 基本完成      
 命令行使用【可选参数--proxy-url xxxxxxxx】:
 ```
 ./pikpak-fuse --pikpak-user XXXXXXXXX --pikpak-password XXXXXXX  -w token保存目录  挂载点
