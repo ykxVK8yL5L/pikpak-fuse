@@ -12,8 +12,8 @@ use fuser::{
     ReplyOpen,ReplyWrite, Request, FUSE_ROOT_ID,
 };
 use tracing::{debug,info,error};
-use sha1::{Sha1, Digest};
 
+use sha1::{Sha1, Digest};
 use serde::de::DeserializeOwned;
 use quick_xml::de::from_str;
 use quick_xml::Writer;
@@ -23,7 +23,7 @@ use serde::{Serialize,Deserialize};
 
 
 
-
+use crate::cache::Cache;
 use crate::drive::{PikpakDrive, PikpakFile};
 use crate::drive::model::*;
 

@@ -26,6 +26,7 @@ time = { version = "0.3", features = ["formatting", "parsing"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "local-time"] }
 url = "2.2"
+moka = { version = "0.9.3", default-features = false, features = ["future"] }
 sha-1 = { version = "0.9", default-features = false }
 hex-literal = "0.3.4"
 hmac-sha = "0.6"

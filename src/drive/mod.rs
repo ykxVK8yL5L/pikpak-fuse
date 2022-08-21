@@ -706,17 +706,18 @@ impl PikpakDrive {
         //     )?
         //     .context("expect response")?;
 
-        let mut rurl = format!("{}/{}",self.config.api_base_url,file_id.to_string());
-        let url = rurl;
-        let mut data = HashMap::new();
-        data.insert("file_id", file_id);
-        let res: PikpakFile = self.request(url,&data)?.context("expect response")?;
+        // let mut rurl = format!("{}/{}",self.config.api_base_url,file_id.to_string());
+        // let url = rurl;
+        // let mut data = HashMap::new();
+        // data.insert("file_id", file_id);
+        // let res: PikpakFile = self.request(url,&data)?.context("expect response")?;
         
-        if res.mime_type.contains("video/"){
-            Ok(res.medias[0].link.url.clone())
-        }else{
-            Ok(res.web_content_link.clone())
-        }
+        // if res.mime_type.contains("video/"){
+        //     Ok(res.medias[0].link.url.clone())
+        // }else{
+        //     Ok(res.web_content_link.clone())
+        // }
+        Ok("".to_string())
     }
 
     pub fn get_quota(&self) -> Result<(u64, u64)> {

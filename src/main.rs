@@ -13,6 +13,7 @@ mod drive;
 mod error;
 mod file_cache;
 mod vfs;
+mod cache;
 
 #[derive(Parser, Debug)]
 #[clap(name = "pikpak-fuse", about, version, author)]
