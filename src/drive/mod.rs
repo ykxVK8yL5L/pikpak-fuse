@@ -529,6 +529,7 @@ impl PikpakDrive {
     }
 
     pub fn create_file_with_proof(&self,name: &str, parent_file_id: &str, hash:&str, size: u64) ->  Result<UploadResponse> {
+        info!("drive create file with proof {}", name);
         let url = format!("{}",self.config.api_base_url);
         let req = UploadRequest{
             kind:"drive#file".to_string(),

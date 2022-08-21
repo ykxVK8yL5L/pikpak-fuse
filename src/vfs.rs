@@ -500,6 +500,7 @@ impl Filesystem for PikpakDriveFileSystem {
             let upload_tags = String::from_utf8(buffer).unwrap();
             let file = self.files.get(&ino).unwrap();
             self.drive.complete_upload(file, upload_tags, &oss_args, &self.upload_state.upload_id);
+            self.upload_state = UploadState::default();
         }
 
 
@@ -858,6 +859,7 @@ impl Filesystem for PikpakDriveFileSystem {
                 return;
             }
         };
+       
         if offset==0{
             let hash = &file.clone().hash.unwrap();
             let upload_response = match self.drive.create_file_with_proof(&file.name, &file.parent_id, hash, data.len() as u64) {
@@ -868,6 +870,9 @@ impl Filesystem for PikpakDriveFileSystem {
                     return;
                 }
             };
+
+            println!("{}",serde_json::to_string(&upload_response).unwrap());
+
             let oss_args = OssArgs {
                 bucket: upload_response.resumable.params.bucket.to_string(),
                 key: upload_response.resumable.params.key.to_string(),
@@ -896,7 +901,6 @@ impl Filesystem for PikpakDriveFileSystem {
 
         }
         self.upload_state.chunk_count += 1;
-
         let oss_args = match &self.upload_state.oss_args {
             Some(oss_args) => oss_args,
             None => {
@@ -908,7 +912,7 @@ impl Filesystem for PikpakDriveFileSystem {
 
 
         self.upload_state.buffer.extend_from_slice(&data);
-        let chunk_data = self.upload_state.buffer.split_to(BLOCK_SIZE as usize);
+        let chunk_data = self.upload_state.buffer.split_to(self.upload_state.buffer.remaining());
         let upload_data = chunk_data.freeze();
 
 
