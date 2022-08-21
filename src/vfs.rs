@@ -486,7 +486,7 @@ impl Filesystem for PikpakDriveFileSystem {
         debug!(inode = ino, fh = fh, "release file");
 
 
-        if self.upload_state.size>0 {
+        if self.upload_state.chunk_count>0 {
             let oss_args = match &self.upload_state.oss_args {
                 Some(oss_args) => oss_args,
                 None => {
