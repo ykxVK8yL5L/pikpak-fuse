@@ -252,17 +252,26 @@ impl PikpakDriveFileSystem {
     fn prepare_for_upload(&mut self,ino: u64, fh: u64) -> Result<bool, Error> {
         info!("prepare_for_upload");
         info!(chunk_count=self.upload_state.chunk_count, "upload_state.chunk_count");
+
+        let file = match self.files.get(&ino) {
+            Some(file) => file,
+            None => {
+                error!(inode = ino, "file not found");
+                return Err(Error::NoEntry)
+            }
+        };
+
+        if !file.id.is_empty() {
+            return Ok(false);
+        }
+
+
+
         if self.upload_state.chunk_count == 0 {
             info!("prepare_for_upload after chunk_count==0");
             let size = self.upload_state.size;
             info!("prepare_for_upload after get upload_state.size");
-            let file = match self.files.get(&ino) {
-                Some(file) => file,
-                None => {
-                    error!(inode = ino, "file not found");
-                    return Err(Error::NoEntry)
-                }
-            };
+            
             info!(file_id=file.id, name=%file.name, size=size, "prepare_for_upload");
             info!("prepare_for_upload before fiele.id is empty");
             if !file.id.is_empty() {
@@ -830,8 +839,6 @@ impl Filesystem for PikpakDriveFileSystem {
             reply: ReplyWrite,
         ) {
         info!("write() called with {:?} {:?}", offset, data.len());
-
-
         match  self.prepare_for_upload(ino, fh) {
             Ok(true) => {
                 self.upload_state.buffer.extend_from_slice(&data);
