@@ -809,54 +809,54 @@ impl Filesystem for PikpakDriveFileSystem {
         reply.ok()
     }
 
-    fn flush(&mut self, _req: &Request<'_>, ino: u64, fh: u64, lock_owner: u64, reply: ReplyEmpty) {
-        debug!("flush() called with {:?} {:?}", ino, fh);
-        match  self.prepare_for_upload(ino, fh) {
-            Ok(true) => {
-                self.maybe_upload_chunk(true, ino, fh);
-                reply.ok();
-            }
-            Ok(false) => {
-                reply.error(libc::ENOENT);
-            }
-            Err(err) => {
-                reply.error(libc::ENOENT);
-            }
-        }
-    }
+    // fn flush(&mut self, _req: &Request<'_>, ino: u64, fh: u64, lock_owner: u64, reply: ReplyEmpty) {
+    //     debug!("flush() called with {:?} {:?}", ino, fh);
+    //     match  self.prepare_for_upload(ino, fh) {
+    //         Ok(true) => {
+    //             self.maybe_upload_chunk(true, ino, fh);
+    //             reply.ok();
+    //         }
+    //         Ok(false) => {
+    //             reply.error(libc::ENOENT);
+    //         }
+    //         Err(err) => {
+    //             reply.error(libc::ENOENT);
+    //         }
+    //     }
+    // }
 
-    fn write(
-            &mut self,
-            _req: &Request<'_>,
-            ino: u64,
-            fh: u64,
-            offset: i64,
-            data: &[u8],
-            write_flags: u32,
-            flags: i32,
-            lock_owner: Option<u64>,
-            reply: ReplyWrite,
-        ) {
-        debug!("write() called with {:?} {:?}", offset, data.len());
-        match  self.prepare_for_upload(ino, fh) {
-            Ok(true) => {
-                self.upload_state.buffer.extend_from_slice(&data);
-                let mut upload_size = self.upload_state.size;
-                if data.len() + offset as usize > upload_size as usize {
-                    upload_size = (data.len() + offset as usize) as u64;
-                }
-                self.upload_state.size = upload_size;
-                self.maybe_upload_chunk(false, ino, fh);
-                reply.written(data.len() as u32 );
-            }
-            Ok(false) => {
-                reply.error(libc::ENOENT);
-            }
-            Err(err) => {
-                reply.error(libc::ENOENT);
-            }
-        }
-    }
+    // fn write(
+    //         &mut self,
+    //         _req: &Request<'_>,
+    //         ino: u64,
+    //         fh: u64,
+    //         offset: i64,
+    //         data: &[u8],
+    //         write_flags: u32,
+    //         flags: i32,
+    //         lock_owner: Option<u64>,
+    //         reply: ReplyWrite,
+    //     ) {
+    //     debug!("write() called with {:?} {:?}", offset, data.len());
+    //     match  self.prepare_for_upload(ino, fh) {
+    //         Ok(true) => {
+    //             self.upload_state.buffer.extend_from_slice(&data);
+    //             let mut upload_size = self.upload_state.size;
+    //             if data.len() + offset as usize > upload_size as usize {
+    //                 upload_size = (data.len() + offset as usize) as u64;
+    //             }
+    //             self.upload_state.size = upload_size;
+    //             self.maybe_upload_chunk(false, ino, fh);
+    //             reply.written(data.len() as u32 );
+    //         }
+    //         Ok(false) => {
+    //             reply.error(libc::ENOENT);
+    //         }
+    //         Err(err) => {
+    //             reply.error(libc::ENOENT);
+    //         }
+    //     }
+    // }
 
 }
 
