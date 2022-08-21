@@ -158,6 +158,7 @@ impl PikpakDriveFileSystem {
 
         if file_name == ".DS_Store" || file_name.starts_with("._") || file_name.starts_with(".") {
             error!(file_name = file_name, "lookup for macos special file");
+            return Err(Error::ChildNotFound);
         }
 
         let mut parent_inode = self

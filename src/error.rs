@@ -7,6 +7,7 @@ pub enum Error {
     ChildNotFound,
     ApiCallFailed,
     UploadFailed,
+    NotFound,
 }
 
 impl From<Error> for c_int {
@@ -15,6 +16,7 @@ impl From<Error> for c_int {
             Error::NoEntry => libc::ENOENT,
             Error::ParentNotFound => libc::ENOENT,
             Error::ChildNotFound => libc::ENOENT,
+            Error::NotFound => libc::ENOENT,
             Error::ApiCallFailed => libc::EIO,
             Error::UploadFailed => libc::EIO,
         }
