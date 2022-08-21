@@ -342,13 +342,13 @@ impl PikpakDriveFileSystem {
 
 
     fn maybe_upload_chunk(&mut self,remaining: bool,ino: u64, fh: u64)-> Result<(), Error>{
-        // let chunk_size = if remaining {
-        //     // last chunk size maybe less than upload_buffer_size
-        //     self.upload_state.buffer.remaining()
-        // } else {
-        //     UPLOAD_BUFFER_SIZE
-        // };
-        let chunk_size = self.upload_state.buffer.remaining();
+        let chunk_size = if remaining {
+            // last chunk size maybe less than upload_buffer_size
+            self.upload_state.buffer.remaining()
+        } else {
+            UPLOAD_BUFFER_SIZE
+        };
+        //let chunk_size = self.upload_state.buffer.remaining();
         let current_chunk = self.upload_state.chunk;
         debug!(chunk_size=chunk_size,"chunk_size is");
         debug!(upload_state_buffer_remaining=self.upload_state.buffer.remaining(),"buffer remaining is");
