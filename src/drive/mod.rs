@@ -662,9 +662,7 @@ impl PikpakDrive {
                 return Err(err.into());
             }
         };
-
         info!(file = %file.name, res_body = body, "complete_upload_response");
-
         Ok(())
     }
 
