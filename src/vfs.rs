@@ -259,8 +259,8 @@ impl PikpakDriveFileSystem {
 
     fn prepare_for_upload(&mut self,ino: u64, fh: u64) -> Result<bool, Error> {
         debug!(chunk_count=self.upload_state.chunk_count, " prepare_for_upload upload_state.chunk_count");
-        let file = match self.files.get(&ino) {
-            Some(file) => file,
+        let mut file = match self.files.get(&ino) {
+            Some(file) => file.clone(),
             None => {
                 error!(inode = ino, "file not found");
                 return Err(Error::NoEntry)
@@ -295,6 +295,10 @@ impl PikpakDriveFileSystem {
                         return Ok(false);
                     }
                 };
+
+                file.id = upload_response.file.id.clone();
+                self.files.insert(ino, file);
+
                 debug!(file_name = upload_response.file.name, "upload response name");
                 let oss_args = OssArgs {
                     bucket: upload_response.resumable.params.bucket.to_string(),
