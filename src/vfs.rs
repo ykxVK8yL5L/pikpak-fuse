@@ -177,7 +177,7 @@ impl PikpakDriveFileSystem {
     }
 
     fn readdir(&mut self, ino: u64, offset: i64) -> Result<Vec<(u64, FileType, String)>, Error> {
-        //info!(ino = ino, "readdir");
+        debug!(ino = ino, "readdir");
         let mut entries = Vec::new();
         let mut inode = self.inodes.get(&ino).ok_or(Error::NoEntry)?.clone();
         if offset == 0 {
@@ -250,9 +250,7 @@ impl PikpakDriveFileSystem {
 
 
     fn prepare_for_upload(&mut self,ino: u64, fh: u64) -> Result<bool, Error> {
-        info!("prepare_for_upload");
-        info!(chunk_count=self.upload_state.chunk_count, "upload_state.chunk_count");
-
+        debug!(chunk_count=self.upload_state.chunk_count, " prepare_for_upload upload_state.chunk_count");
         let file = match self.files.get(&ino) {
             Some(file) => file,
             None => {
@@ -260,30 +258,22 @@ impl PikpakDriveFileSystem {
                 return Err(Error::NoEntry)
             }
         };
-
         if !file.id.is_empty() {
             return Ok(false);
         }
-
-
-
         if self.upload_state.chunk_count == 0 {
-            info!("prepare_for_upload after chunk_count==0");
             let size = self.upload_state.size;
-            info!("prepare_for_upload after get upload_state.size");
-            
-            info!(file_id=file.id, name=%file.name, size=size, "prepare_for_upload");
-            info!("prepare_for_upload before fiele.id is empty");
+            debug!(file_id=file.id, name=%file.name, size=size, "prepare_for_upload");
             if !file.id.is_empty() {
                 return Ok(false);
             }
             // TODO: create parent folders?
-            info!("prepare_for_upload after upload_state.chunk_count==0");
+            debug!("prepare_for_upload after upload_state.chunk_count==0");
             let upload_buffer_size = BLOCK_SIZE as u64;
             let chunk_count =
                 size / upload_buffer_size + if size % upload_buffer_size != 0 { 1 } else { 0 };
             self.upload_state.chunk_count = chunk_count;
-            info!("uploading {} ({} bytes)...", file.name, size);
+            debug!("uploading {} ({} bytes)...", file.name, size);
             if size>0 {
                 let hash = file.clone().hash.unwrap();
                 let res = self
@@ -297,9 +287,7 @@ impl PikpakDriveFileSystem {
                         return Ok(false);
                     }
                 };
-
-                info!(file_name = upload_response.file.name, "upload response name");
-
+                debug!(file_name = upload_response.file.name, "upload response name");
                 let oss_args = OssArgs {
                     bucket: upload_response.resumable.params.bucket.to_string(),
                     key: upload_response.resumable.params.key.to_string(),
@@ -339,19 +327,16 @@ impl PikpakDriveFileSystem {
             UPLOAD_BUFFER_SIZE
         };
 
-
         let current_chunk = self.upload_state.chunk;
-        info!(chunk_size=chunk_size,"chunk_size is");
-        info!(upload_state_buffer_remaining=self.upload_state.buffer.remaining(),"buffer remaining is");
-        info!(current_chunk=current_chunk,"current_chunk is");
-
-
+        debug!(chunk_size=chunk_size,"chunk_size is");
+        debug!(upload_state_buffer_remaining=self.upload_state.buffer.remaining(),"buffer remaining is");
+        debug!(current_chunk=current_chunk,"current_chunk is");
 
         if chunk_size > 0
         && self.upload_state.buffer.remaining() >= chunk_size
         && current_chunk <= self.upload_state.chunk_count
         {
-            info!("maybe_upload_chunk after chunk_size>0");
+            debug!("maybe_upload_chunk after chunk_size>0");
             let file = self.files.get(&ino).ok_or(Error::NoEntry)?;
             let chunk_data = self.upload_state.buffer.split_to(chunk_size);
 
@@ -414,7 +399,7 @@ impl Filesystem for PikpakDriveFileSystem {
         let dirname = Path::new(name);
         // 忽略 macOS 上的一些特殊文件
         let file_name = name.to_string_lossy().to_string();
-        info!(file_name = file_name, "lookup for macos special file");
+        debug!(file_name = file_name, "lookup for macos special file");
 
         if file_name == ".DS_Store" || file_name.starts_with("._") || file_name.starts_with(".") {
             //reply.error(libc::ENOENT);
@@ -466,7 +451,7 @@ impl Filesystem for PikpakDriveFileSystem {
     }
 
     fn open(&mut self, _req: &Request<'_>, ino: u64, _flags: i32, reply: ReplyOpen) {
-        info!(inode = ino, "open");
+        debug!(inode = ino, "open");
         if let Some((file_id, file_name, file_size)) = self
             .files
             .get(&ino)
@@ -706,8 +691,7 @@ impl Filesystem for PikpakDriveFileSystem {
         flags: i32,
         reply: ReplyCreate,
     ) {
-        info!("create() called with {:?} {:?}", parent, name);
-
+        debug!("create() called with {:?} {:?}", parent, name);
         // 忽略 macOS 上的一些特殊文件
         let file_name = name.to_string_lossy();
         if file_name == ".DS_Store" || file_name.starts_with("._") {
@@ -754,12 +738,8 @@ impl Filesystem for PikpakDriveFileSystem {
             medias:Vec::new(),
             hash:Some(file_hash),
         };
-
         self.files.insert(new_file_inode, file.clone());
         self.inodes.entry(new_file_inode).or_insert_with(|| Inode::new(new_file_inode));
-
-        info!("{},self.files.insert file {:?}", new_file_inode,file);
-
         parent_inode.add_child(name.to_os_string(), new_file_inode);
         self.inodes.insert(new_file_inode, file_inode);
         self.inodes.insert(parent, parent_inode);
@@ -811,7 +791,7 @@ impl Filesystem for PikpakDriveFileSystem {
     }
 
     fn flush(&mut self, _req: &Request<'_>, ino: u64, fh: u64, lock_owner: u64, reply: ReplyEmpty) {
-        info!("flush() called with {:?} {:?}", ino, fh);
+        debug!("flush() called with {:?} {:?}", ino, fh);
         match  self.prepare_for_upload(ino, fh) {
             Ok(true) => {
                 self.maybe_upload_chunk(true, ino, fh);
@@ -838,7 +818,7 @@ impl Filesystem for PikpakDriveFileSystem {
             lock_owner: Option<u64>,
             reply: ReplyWrite,
         ) {
-        info!("write() called with {:?} {:?}", offset, data.len());
+        debug!("write() called with {:?} {:?}", offset, data.len());
         match  self.prepare_for_upload(ino, fh) {
             Ok(true) => {
                 self.upload_state.buffer.extend_from_slice(&data);

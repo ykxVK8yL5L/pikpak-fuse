@@ -120,7 +120,7 @@ impl PikpakDrive {
         if drive_id.is_empty() {
             bail!("get default drive id failed");
         }
-        //info!(drive_id = %drive_id, "found default drive");
+        debug!(drive_id = %drive_id, "found default drive");
         drive.drive_id = Some(drive_id);
         drive.nick_name = Some(nick_name);
 
@@ -152,7 +152,7 @@ impl PikpakDrive {
         match res.error_for_status_ref() {
             Ok(_) => {
                 let res = res.json::<RefreshTokenResponse>()?;
-                info!(
+                debug!(
                     refresh_token = %res.access_token,
                     "refresh token succeed"
                 );
@@ -181,7 +181,7 @@ impl PikpakDrive {
                     // let mut cred = self.credentials.write();
                     // cred.refresh_token = res.refresh_token.clone();
                     // cred.access_token = Some(res.access_token.clone());
-                    // info!(
+                    // debug!(
                     //     refresh_token = %res.access_token,
                     //     "get token succeed"
                     // );
@@ -466,7 +466,7 @@ impl PikpakDrive {
 
 
     pub fn list_all(&self, parent_file_id: &str) -> Result<Vec<PikpakFile>> {
-        info!("drive list_all: {}", parent_file_id);
+        debug!("drive list_all: {}", parent_file_id);
         let mut files = Vec::new();
         let mut marker = None;
         loop {
@@ -529,7 +529,7 @@ impl PikpakDrive {
     }
 
     pub fn create_file_with_proof(&self,name: &str, parent_file_id: &str, hash:&str, size: u64) ->  Result<UploadResponse> {
-        info!("drive create file with proof {}", name);
+        debug!("drive create file with proof {}", name);
         let url = format!("{}",self.config.api_base_url);
         let req = UploadRequest{
             kind:"drive#file".to_string(),
@@ -640,7 +640,7 @@ impl PikpakDrive {
     }
 
     pub fn complete_upload(&self,file:&PikpakFile, upload_tags:String, oss_args:&OssArgs, upload_id:&str)-> Result<()> {
-        info!(file = %file.name, "complete_upload");
+        debug!(file = %file.name, "complete_upload");
         let url = format!("https://{}/{}?uploadId={}",oss_args.endpoint,oss_args.key,upload_id);
         let now = SystemTime::now();
         let gmt = httpdate::fmt_http_date(now);
@@ -662,7 +662,7 @@ impl PikpakDrive {
                 return Err(err.into());
             }
         };
-        info!(file = %file.name, res_body = body, "complete_upload_response");
+        debug!(file = %file.name, res_body = body, "complete_upload_response");
         Ok(())
     }
 
