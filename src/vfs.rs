@@ -747,8 +747,6 @@ impl Filesystem for PikpakDriveFileSystem {
 
         info!("{},self.files.insert file {:?}", new_file_inode,file);
 
-
-    
         parent_inode.add_child(name.to_os_string(), new_file_inode);
         self.inodes.insert(new_file_inode, file_inode);
         self.inodes.insert(parent, parent_inode);
@@ -801,8 +799,18 @@ impl Filesystem for PikpakDriveFileSystem {
 
     fn flush(&mut self, _req: &Request<'_>, ino: u64, fh: u64, lock_owner: u64, reply: ReplyEmpty) {
         info!("flush() called with {:?} {:?}", ino, fh);
-        self.maybe_upload_chunk(true, ino, fh);
-        reply.ok();
+        match  self.prepare_for_upload(ino, fh) {
+            Ok(true) => {
+                self.maybe_upload_chunk(true, ino, fh);
+                reply.ok();
+            }
+            Ok(false) => {
+                reply.error(libc::EINVAL);
+            }
+            Err(err) => {
+                reply.error(libc::EFAULT);
+            }
+        }
     }
 
     fn write(
