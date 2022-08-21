@@ -330,7 +330,7 @@ impl PikpakDriveFileSystem {
             UPLOAD_BUFFER_SIZE
         };
 
-        
+
         let current_chunk = self.upload_state.chunk;
         info!(chunk_size=chunk_size,"chunk_size is");
         info!(upload_state_buffer_remaining=self.upload_state.buffer.remaining(),"buffer remaining is");
@@ -830,9 +830,16 @@ impl Filesystem for PikpakDriveFileSystem {
             reply: ReplyWrite,
         ) {
         info!("write() called with {:?} {:?}", offset, data.len());
+
+
         match  self.prepare_for_upload(ino, fh) {
             Ok(true) => {
                 self.upload_state.buffer.extend_from_slice(&data);
+                let mut upload_size = self.upload_state.size;
+                if data.len() + offset as usize > upload_size as usize {
+                    upload_size = (data.len() + offset as usize) as u64;
+                }
+                self.upload_state.size = upload_size;
                 self.maybe_upload_chunk(false, ino, fh);
                 reply.written(data.len() as u32 );
             }
