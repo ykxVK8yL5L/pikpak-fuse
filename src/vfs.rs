@@ -153,6 +153,13 @@ impl PikpakDriveFileSystem {
     }
 
     fn lookup(&mut self, parent: u64, name: &OsStr) -> Result<FileAttr, Error> {
+        let file_name = name.to_string_lossy().to_string();
+        debug!(file_name = file_name, "lookup for macos special file");
+
+        if file_name == ".DS_Store" || file_name.starts_with("._") || file_name.starts_with(".") {
+            error!(file_name = file_name, "lookup for macos special file");
+        }
+
         let mut parent_inode = self
             .inodes
             .get(&parent)
@@ -398,14 +405,6 @@ impl Filesystem for PikpakDriveFileSystem {
     fn lookup(&mut self, _req: &Request<'_>, parent: u64, name: &OsStr, reply: ReplyEntry) {
         let dirname = Path::new(name);
         // 忽略 macOS 上的一些特殊文件
-        let file_name = name.to_string_lossy().to_string();
-        debug!(file_name = file_name, "lookup for macos special file");
-
-        if file_name == ".DS_Store" || file_name.starts_with("._") || file_name.starts_with(".") {
-            reply.error(libc::ENOENT);
-            return ;
-        }
-        
         debug!(parent = parent, name = %dirname.display(), "lookup");
         match self.lookup(parent, name) {
             Ok(attr) => reply.entry(&TTL, &attr, 0),
