@@ -291,8 +291,6 @@ impl PikpakDriveFileSystem {
 
                 info!(file_name = upload_response.file.name, "upload response name");
 
-
-
                 let oss_args = OssArgs {
                     bucket: upload_response.resumable.params.bucket.to_string(),
                     key: upload_response.resumable.params.key.to_string(),
@@ -331,8 +329,14 @@ impl PikpakDriveFileSystem {
         } else {
             UPLOAD_BUFFER_SIZE
         };
+
+        
         let current_chunk = self.upload_state.chunk;
         info!(chunk_size=chunk_size,"chunk_size is");
+        info!(upload_state_buffer_remaining=self.upload_state.buffer.remaining(),"buffer remaining is");
+        info!(current_chunk=current_chunk,"current_chunk is");
+
+
 
         if chunk_size > 0
         && self.upload_state.buffer.remaining() >= chunk_size
