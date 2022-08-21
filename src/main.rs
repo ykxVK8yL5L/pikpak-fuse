@@ -2,7 +2,7 @@ use std::{env, io, path::PathBuf};
 
 use clap::Parser;
 use fuser::MountOption;
-
+use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 use drive::{model::Credentials,PikpakDrive, DriveConfig};
 use vfs::PikpakDriveFileSystem;
 
@@ -49,9 +49,12 @@ fn main() -> anyhow::Result<()> {
     #[cfg(feature = "native-tls-vendored")]
     openssl_probe::init_ssl_cert_env_vars();
 
-    tracing_subscriber::fmt::init();
-    if env::var("RUST_LOG").is_err() {
-       env::set_var("RUST_LOG", "pikpak_fuse=info");
+    tracing_subscriber::registry()
+    .with(fmt::layer())
+    .with(EnvFilter::from_env("PIKPAK_FUSE"))
+    .init();
+    if env::var("PIKPAK_FUSE").is_err() {
+       env::set_var("PIKPAK_FUSE", "pikpak_fuse=info");
     }
 
     let opt = Opt::parse();
