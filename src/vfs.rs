@@ -395,8 +395,8 @@ impl PikpakDriveFileSystem {
                 let upload_tags = String::from_utf8(buffer).unwrap();
                 self.drive.complete_upload(file,upload_tags,oss_args,&self.upload_state.upload_id);
                 self.upload_state = UploadState::default();
-                self.files.remove(&ino_remove);
-                self.inodes.remove(&ino_remove);
+                self.files.remove(&ino);
+                self.inodes.remove(&ino);
                 return Ok(());
             }
             self.upload_state.chunk += 1;
