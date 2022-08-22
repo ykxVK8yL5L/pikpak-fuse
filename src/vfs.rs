@@ -270,6 +270,9 @@ impl PikpakDriveFileSystem {
         if !file.id.is_empty() {
             return Ok(false);
         }
+        if file.phase == "PHASE_TYPE_COMPLETE"{
+            return Ok(false);
+        }
 
         // 忽略 macOS 上的一些特殊文件
         if file.name == ".DS_Store" || file.name.starts_with(".") {
