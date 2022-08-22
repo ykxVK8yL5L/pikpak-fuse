@@ -310,8 +310,6 @@ impl PikpakDriveFileSystem {
                         return Ok(false);
                     }
                 };
-
-            
                 debug!(file_name = upload_response.file.name, "upload response name");
                 let oss_args = OssArgs {
                     bucket: upload_response.resumable.params.bucket.to_string(),
@@ -353,16 +351,14 @@ impl PikpakDriveFileSystem {
         };
         //let chunk_size = self.upload_state.buffer.remaining();
         let current_chunk = self.upload_state.chunk;
-        debug!(chunk_size=chunk_size,"chunk_size is");
-        debug!(upload_state_buffer_remaining=self.upload_state.buffer.remaining(),"buffer remaining is");
-        debug!(current_chunk=current_chunk,"current_chunk is");
-        info!(chunk_count=self.upload_state.chunk_count, "chunk_count is");
-
+        // debug!(chunk_size=chunk_size,"chunk_size is");
+        // debug!(upload_state_buffer_remaining=self.upload_state.buffer.remaining(),"buffer remaining is");
+        // debug!(current_chunk=current_chunk,"current_chunk is");
+        // info!(chunk_count=self.upload_state.chunk_count, "chunk_count is");
+        debug!("maybe_upload_chunk after chunk_size>0");
         if chunk_size > 0
-        && self.upload_state.buffer.remaining() >= chunk_size
         && current_chunk <= self.upload_state.chunk_count
         {
-            debug!("maybe_upload_chunk after chunk_size>0");
             let file = self.files.get(&ino).ok_or(Error::NoEntry)?;
             let chunk_data = self.upload_state.buffer.split_to(chunk_size);
 
@@ -375,7 +371,6 @@ impl PikpakDriveFileSystem {
                 }
             };
             let res = self.drive.upload_chunk(file,oss_args,&self.upload_state.upload_id,current_chunk,upload_data.clone());
-            
             let part = match res {
                 Ok(part) => part,
                 Err(err) => {
@@ -383,27 +378,22 @@ impl PikpakDriveFileSystem {
                     return Err(Error::UploadFailed);
                 }
             };
-                
             debug!(chunk_count = %self.upload_state.chunk_count, current_chunk=current_chunk, "upload chunk info");
             self.upload_state.upload_tags.Part.push(part);
-
-             
             if current_chunk == self.upload_state.chunk_count{
                 debug!(file_name = %file.name, "upload finished");
-                
                 // file.id = upload_response.file.id.clone();
                 // self.files.insert(ino, file.clone());
-
                 let mut buffer = Vec::new();
                 let mut ser = XmlSerializer::with_root(Writer::new_with_indent(&mut buffer, b' ', 4), Some("CompleteMultipartUpload"));
                 self.upload_state.upload_tags.serialize(&mut ser).unwrap();
                 let upload_tags = String::from_utf8(buffer).unwrap();
                 self.drive.complete_upload(file,upload_tags,oss_args,&self.upload_state.upload_id);
                 self.upload_state = UploadState::default();
-
+                Ok(())
             }
-            self.upload_state.chunk += 1;
         }
+        self.upload_state.chunk += 1;
         Ok(())
     }
 
