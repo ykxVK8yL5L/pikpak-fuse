@@ -2,7 +2,7 @@ msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8\n"
 
 msgid "pikpakDrive"
-msgstr "pikpak网盘"
+msgstr "PikPak网盘"
 
 
 msgid "Username"
