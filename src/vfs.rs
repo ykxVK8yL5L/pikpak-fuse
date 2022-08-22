@@ -311,6 +311,24 @@ impl PikpakDriveFileSystem {
                     }
                 };
 
+                file = upload_response.file;
+                // let file_inode =self.inodes.get(&ino).ok_or(Error::NoEntry).unwrap().clone();
+                // let parent = file_inode.parent;
+                // let mut parent_inode = self.inodes.get(file_inode.parent).ok_or(Error::NoEntry).unwrap().clone();
+                // let parent_file = match self.files.get(&parent).ok_or(Error::NoEntry){
+                //     Ok(file) => file,
+                //     Err(e) => {
+                //         reply.error(Error::ParentNotFound.into());
+                //         return;
+                //     }
+                // };
+                self.files.insert(&ino, file.clone());
+                // self.inodes.entry(&ino).or_insert_with(|| Inode::new(file_inode));
+                // parent_inode.add_child(file.name, &ino);
+                // self.inodes.insert(&ino, file_inode);
+                // self.inodes.insert(parent, parent_inode);
+
+
                 debug!(file_name = upload_response.file.name, "upload response name");
                 let oss_args = OssArgs {
                     bucket: upload_response.resumable.params.bucket.to_string(),
@@ -395,8 +413,6 @@ impl PikpakDriveFileSystem {
                 let upload_tags = String::from_utf8(buffer).unwrap();
                 self.drive.complete_upload(file,upload_tags,oss_args,&self.upload_state.upload_id);
                 self.upload_state = UploadState::default();
-                self.files.remove(&ino);
-                self.inodes.remove(&ino);
                 return Ok(());
             }
             self.upload_state.chunk += 1;
