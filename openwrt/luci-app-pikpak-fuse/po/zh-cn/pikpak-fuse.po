@@ -15,7 +15,7 @@ msgid "Proxy Url"
 msgstr "代理地址"
 
 msgid "pikpakDrive FUSE"
-msgstr "pikpak网盘 FUSE"
+msgstr "PikPak网盘 FUSE"
 
 msgid "Enable"
 msgstr "启用"
