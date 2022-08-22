@@ -291,7 +291,7 @@ impl PikpakDriveFileSystem {
             let chunk_count =
                 size / upload_buffer_size + if size % upload_buffer_size != 0 { 1 } else { 0 };
 
-            info!(chunk_count=chunk_count, "prepare_for_upload chunk_count");
+            debug!(chunk_count=chunk_count, "prepare_for_upload chunk_count");
 
 
             self.upload_state.chunk_count = chunk_count;
@@ -358,7 +358,7 @@ impl PikpakDriveFileSystem {
         debug!(chunk_size=chunk_size,"chunk_size is");
         debug!(upload_state_buffer_remaining=self.upload_state.buffer.remaining(),"buffer remaining is");
         debug!(current_chunk=current_chunk,"current_chunk is");
-        info!(chunk_count=self.upload_state.chunk_count, "chunk_count is");
+        debug!(chunk_count=self.upload_state.chunk_count, "chunk_count is");
 
         if chunk_size > 0
         && self.upload_state.buffer.remaining() >= chunk_size
