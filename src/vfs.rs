@@ -95,7 +95,7 @@ pub struct PikpakDriveFileSystem {
     inodes: BTreeMap<u64, Inode>,
     next_inode: u64,
     next_fh: u64,
-    upload_buffer_size:u64,
+    upload_buffer_size:usize,
     upload_state: UploadState,
 }
 
@@ -348,7 +348,7 @@ impl PikpakDriveFileSystem {
             // last chunk size maybe less than upload_buffer_size
             self.upload_state.buffer.remaining()
         } else {
-            self.upload_buffer_size as usize
+            self.upload_buffer_size
         };
         //let chunk_size = self.upload_state.buffer.remaining();
         let current_chunk = self.upload_state.chunk;
