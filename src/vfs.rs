@@ -258,7 +258,7 @@ impl PikpakDriveFileSystem {
 
     fn prepare_for_upload(&mut self,ino: u64, fh: u64) -> Result<bool, Error> {
         debug!(chunk_count=self.upload_state.chunk_count, " prepare_for_upload upload_state.chunk_count");
-        let file = match self.files.get(&ino) {
+        let mut file = match self.files.get(&ino) {
             Some(file) => file.clone(),
             None => {
                 error!(inode = ino, "file not found");
@@ -303,7 +303,6 @@ impl PikpakDriveFileSystem {
                     .create_file_with_proof(&file.name, &file.parent_id, &hash, size);
 
                 
-            
                 let upload_response = match res {
                     Ok(upload_response_info) => upload_response_info,
                     Err(err) => {
@@ -312,8 +311,6 @@ impl PikpakDriveFileSystem {
                     }
                 };
 
-            
-            
                 debug!(file_name = upload_response.file.name, "upload response name");
                 let oss_args = OssArgs {
                     bucket: upload_response.resumable.params.bucket.to_string(),
@@ -392,16 +389,14 @@ impl PikpakDriveFileSystem {
              
             if current_chunk == self.upload_state.chunk_count{
                 debug!(file_name = %file.name, "upload finished");
-                
-                self.files.remove(&ino);
-                self.inodes.remove(&ino);
-
                 let mut buffer = Vec::new();
                 let mut ser = XmlSerializer::with_root(Writer::new_with_indent(&mut buffer, b' ', 4), Some("CompleteMultipartUpload"));
                 self.upload_state.upload_tags.serialize(&mut ser).unwrap();
                 let upload_tags = String::from_utf8(buffer).unwrap();
                 self.drive.complete_upload(file,upload_tags,oss_args,&self.upload_state.upload_id);
                 self.upload_state = UploadState::default();
+                self.files.remove(&ino_remove);
+                self.inodes.remove(&ino_remove);
                 return Ok(());
             }
             self.upload_state.chunk += 1;
