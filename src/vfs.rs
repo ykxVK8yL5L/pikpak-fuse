@@ -301,6 +301,8 @@ impl PikpakDriveFileSystem {
                 let res = self
                     .drive
                     .create_file_with_proof(&file.name, &file.parent_id, &hash, size);
+
+                
             
                 let upload_response = match res {
                     Ok(upload_response_info) => upload_response_info,
@@ -310,6 +312,7 @@ impl PikpakDriveFileSystem {
                     }
                 };
 
+            
             
                 debug!(file_name = upload_response.file.name, "upload response name");
                 let oss_args = OssArgs {
@@ -390,8 +393,8 @@ impl PikpakDriveFileSystem {
             if current_chunk == self.upload_state.chunk_count{
                 debug!(file_name = %file.name, "upload finished");
                 
-                // file.id = upload_response.file.id.clone();
-                // self.files.insert(ino, file.clone());
+                self.files.remove(&ino);
+                self.inodes.remove(&ino);
 
                 let mut buffer = Vec::new();
                 let mut ser = XmlSerializer::with_root(Writer::new_with_indent(&mut buffer, b' ', 4), Some("CompleteMultipartUpload"));
