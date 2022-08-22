@@ -21,7 +21,7 @@ start_service() {
       local proxy_url=$(uci_get_by_type default proxy_url)
       local mount_point=$(uci_get_by_type default mount_point)
       local read_buf_size=$(uci_get_by_type default read_buffer_size 10485760)
-      local upload_buffer_size=$(uci_get_by_type default read_buffer_size 16777216)
+      local upload_buffer_size=$(uci_get_by_type default upload_buffer_size 16777216)
 
       local extra_options=""
 
