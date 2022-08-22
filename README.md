@@ -39,8 +39,8 @@ https://pikpak.2509652494538.workers.dev
 
 pikpak网盘 FUSE 磁盘挂载，主要用于配合 [Emby](https://emby.media) 或者 [Jellyfin](https://jellyfin.org) 观看pikpak网盘内容，功能特性：
 
-1. 目前只读，不支持写入
-2. 支持 Linux 和 macOS，暂不支持 Windows
+~1. 目前只读，不支持写入~   
+2. 支持 Linux 和 macOS，暂不支持 Windows(Mac上上传文件会闪退暂不解决).  
 
 [pikpak-webdav](https://github.com/ykxVK8yL5L/pikpak-webdav) 项目已经实现了通过 WebDAV 访问pikpak网盘内容，但由于 Emby 和 Jellyfin 都不支持直接访问 WebDAV 资源，
 需要配合 [rclone](https://rclone.org) 之类的软件将 WebDAV 挂载为本地磁盘，而本项目则直接通过 FUSE 实现将pikpak网盘挂载为本地磁盘，省去使用 rclone 再做一层中转。
