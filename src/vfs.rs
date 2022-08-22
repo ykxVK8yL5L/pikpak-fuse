@@ -348,7 +348,7 @@ impl PikpakDriveFileSystem {
             // last chunk size maybe less than upload_buffer_size
             self.upload_state.buffer.remaining()
         } else {
-            self.upload_buffer_size
+            self.upload_buffer_size as usize
         };
         //let chunk_size = self.upload_state.buffer.remaining();
         let current_chunk = self.upload_state.chunk;
