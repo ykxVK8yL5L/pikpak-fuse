@@ -844,12 +844,12 @@ impl Filesystem for PikpakDriveFileSystem {
         match  self.prepare_for_upload(ino, fh) {
             Ok(true) => {
                 self.upload_state.buffer.extend_from_slice(&data);
+                self.maybe_upload_chunk(false, ino, fh);
                 let mut upload_size = self.upload_state.size;
                 if data.len() + offset as usize > upload_size as usize {
                     upload_size = (data.len() + offset as usize) as u64;
                 }
                 self.upload_state.size = upload_size;
-                self.maybe_upload_chunk(false, ino, fh);
                 reply.written(data.len() as u32 );
             }
             Ok(false) => {
