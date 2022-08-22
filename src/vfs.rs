@@ -203,22 +203,31 @@ impl PikpakDriveFileSystem {
                 file.name
             );
 
+            // 删除所有旧的child 重新添加
             let mut to_remove = inode.children.keys().cloned().collect::<Vec<_>>();
             for file in &files {
                 let name = OsString::from(file.name.clone());
-                if inode.children.contains_key(&name) {
-                    // file already exists
-                    to_remove.retain(|n| n != &name);
-                } else {
-                    let new_inode = self.next_inode();
-                    inode.add_child(name, new_inode);
-                    self.files.insert(new_inode, file.clone());
-                    self.inodes
-                        .entry(new_inode)
-                        .or_insert_with(|| Inode::new(ino));
-                }
-            }
+                to_remove.retain(|n| n != &name);
+                let new_inode = self.next_inode();
+                inode.add_child(name, new_inode);
+                self.files.insert(new_inode, file.clone());
+                self.inodes.entry(new_inode).or_insert_with(|| Inode::new(ino));
 
+                //  如果存在名称则删除？
+                // if inode.children.contains_key(&name) {
+                //     // file already exists
+                //     to_remove.retain(|n| n != &name);
+                // } else {
+                //     let new_inode = self.next_inode();
+                //     inode.add_child(name, new_inode);
+                //     self.files.insert(new_inode, file.clone());
+                //     self.inodes
+                //         .entry(new_inode)
+                //         .or_insert_with(|| Inode::new(ino));
+                // }
+
+
+            }
             if !to_remove.is_empty() {
                 for name in to_remove {
                     if let Some(ino_remove) = inode.children.remove(&name) {
