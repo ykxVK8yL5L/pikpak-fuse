@@ -32,6 +32,12 @@ read_buffer_size = e:option(Value, "read_buffer_size", translate("Read Buffer Si
 read_buffer_size.default = "10485760"
 read_buffer_size.datatype = "uinteger"
 
+upload_buffer_size = e:option(Value, "upload_buffer_size", translate("Write Buffer Size"))
+upload_buffer_size.default = "16777216"
+upload_buffer_size.datatype = "uinteger"
+
+
+
 
 debug = e:option(Flag, "debug", translate("Debug Mode"))
 debug.rmempty = false

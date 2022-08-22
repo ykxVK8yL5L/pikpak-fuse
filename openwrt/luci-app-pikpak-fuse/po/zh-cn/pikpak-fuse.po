@@ -29,6 +29,9 @@ msgstr "挂载点"
 msgid "Read Buffer Size"
 msgstr "下载缓冲大小(bytes)"
 
+msgid "Write Buffer Size"
+msgstr "上传缓冲大小(bytes)"
+
 msgid "Collecting data..."
 msgstr "获取数据中..."
 

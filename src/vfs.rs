@@ -32,9 +32,6 @@ use crate::file_cache::FileCache;
 
 const TTL: Duration = Duration::from_secs(1);
 const BLOCK_SIZE: u64 = 4194304;
-const UPLOAD_BUFFER_SIZE: usize = 16777216;
-
-
 
 
 
@@ -98,11 +95,12 @@ pub struct PikpakDriveFileSystem {
     inodes: BTreeMap<u64, Inode>,
     next_inode: u64,
     next_fh: u64,
+    upload_buffer_size:u64,
     upload_state: UploadState,
 }
 
 impl PikpakDriveFileSystem {
-    pub fn new(drive: PikpakDrive, read_buffer_size: usize) -> Self {
+    pub fn new(drive: PikpakDrive, read_buffer_size: usize,upload_buffer_size:usize) -> Self {
         let file_cache = FileCache::new(drive.clone(), read_buffer_size);
         Self {
             drive,
@@ -111,6 +109,7 @@ impl PikpakDriveFileSystem {
             inodes: BTreeMap::new(),
             next_inode: 1,
             next_fh: 1,
+            upload_buffer_size:upload_buffer_size,
             upload_state: UploadState::default(),
         }
     }
@@ -288,7 +287,7 @@ impl PikpakDriveFileSystem {
             }
             // TODO: create parent folders?
             debug!("prepare_for_upload after upload_state.chunk_count==0");
-            let upload_buffer_size = UPLOAD_BUFFER_SIZE as u64;
+            let upload_buffer_size = self.upload_buffer_size as u64;
             let chunk_count =
                 size / upload_buffer_size + if size % upload_buffer_size != 0 { 1 } else { 0 };
 
@@ -349,7 +348,7 @@ impl PikpakDriveFileSystem {
             // last chunk size maybe less than upload_buffer_size
             self.upload_state.buffer.remaining()
         } else {
-            UPLOAD_BUFFER_SIZE
+            self.upload_buffer_size
         };
         //let chunk_size = self.upload_state.buffer.remaining();
         let current_chunk = self.upload_state.chunk;

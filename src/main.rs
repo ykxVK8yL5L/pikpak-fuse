@@ -43,6 +43,10 @@ struct Opt {
     /// Read/download buffer size in bytes, defaults to 10MB
     #[clap(short = 'S', long, default_value = "10485760")]
     read_buffer_size: usize,
+
+    /// Upload buffer size in bytes, defaults to 16MB
+    #[clap(long, default_value = "16777216")]
+    upload_buffer_size: usize,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -85,7 +89,7 @@ fn main() -> anyhow::Result<()> {
     })?;
 
     let _nick_name = drive.nick_name.clone();
-    let vfs = PikpakDriveFileSystem::new(drive, opt.read_buffer_size);
+    let vfs = PikpakDriveFileSystem::new(drive, opt.read_buffer_size,opt.upload_buffer_size);
     let mut mount_options = vec![MountOption::AutoUnmount, MountOption::NoAtime];
     // read only for now
     // mount_options.push(MountOption::RO);
