@@ -291,7 +291,7 @@ impl PikpakDriveFileSystem {
         if self.upload_state.chunk_count == 0 {
             let size = self.upload_state.size;
             debug!(file_id=file.id, name=%file.name, size=size, "prepare_for_upload");
-            if !file.id.is_empty() {
+            if !file.id.is_empty() && !(&file.id=="xxxxxxxx"){
                 return Ok(false);
             }
             // TODO: create parent folders?
