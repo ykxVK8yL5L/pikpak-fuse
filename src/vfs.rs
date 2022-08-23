@@ -275,7 +275,7 @@ impl PikpakDriveFileSystem {
             }
         };
 
-        if !file.id.is_empty() && !file.id=="xxxxxxxx" {
+        if !file.id.is_empty() && !(&file.id=="xxxxxxxx") {
             return Ok(false);
         }
         if file.phase == "PHASE_TYPE_COMPLETE"{
