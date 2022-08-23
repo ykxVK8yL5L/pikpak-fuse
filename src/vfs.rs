@@ -753,7 +753,7 @@ impl Filesystem for PikpakDriveFileSystem {
         let file = PikpakFile {
             name: file_name,
             kind: "drive#file".to_string(),
-            id: "".to_string(),
+            id: "xxxxxxxx".to_string(),
             parent_id:parent_file_id,
             phase: "".to_string(),
             size: "0".to_string(),
