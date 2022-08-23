@@ -275,7 +275,7 @@ impl PikpakDriveFileSystem {
             }
         };
 
-        if !file.id.is_empty() && !(&file.id=="xxxxxxxx") {
+        if !file.id.is_empty() {
             return Ok(false);
         }
         if file.phase == "PHASE_TYPE_COMPLETE"{
@@ -291,7 +291,7 @@ impl PikpakDriveFileSystem {
         if self.upload_state.chunk_count == 0 {
             let size = self.upload_state.size;
             debug!(file_id=file.id, name=%file.name, size=size, "prepare_for_upload");
-            if !file.id.is_empty() && !(&file.id=="xxxxxxxx"){
+            if !file.id.is_empty() {
                 return Ok(false);
             }
             // TODO: create parent folders?
@@ -753,7 +753,7 @@ impl Filesystem for PikpakDriveFileSystem {
         let file = PikpakFile {
             name: file_name,
             kind: "drive#file".to_string(),
-            id: "xxxxxxxx".to_string(),
+            id: "".to_string(),
             parent_id:parent_file_id,
             phase: "".to_string(),
             size: "0".to_string(),
