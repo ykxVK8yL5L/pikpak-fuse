@@ -1,6 +1,8 @@
 #  能用  但是由于fuse机制 会大量请求服务器  体验不好  不建议使用
 # docker: https://hub.docker.com/r/ykxvk8yl5l/pikpak-fuse
-# 演示视频: https://youtu.be/fl1Lp1_1AR4
+# 演示视频: https://youtu.be/fl1Lp1_1AR4   
+# https://youtu.be/yEOhw2mQwyI
+
 # 基本完成      
 命令行使用【可选参数--proxy-url xxxxxxxx】:
 ```
