@@ -11,6 +11,11 @@
 ## 有网友反馈非邮箱登陆会登陆失败，请使用邮箱、密码方式登陆 
 
 ## 可用代理【未验证】
+https://pikpak.89u.xyz  
+https://diii.tk   
+https://api-pikpak.go-back.cf   
+https://api-pikpak.gogoback.cf   
+https://api-pikpak.tjsky.cf  
 https://api.13pikpak.cf    
 https://api.14pikpak.cf    
 https://api.15pikpak.cf   
