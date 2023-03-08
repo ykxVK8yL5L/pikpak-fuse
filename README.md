@@ -78,7 +78,7 @@ aarch64/arm/x86_64/i686 等架构的版本，可以下载后使用 opkg 安装�
 
 ```bash
 wget https://github.com/ykxVK8yL5L/pikpak-fuse/releases/download/v0.1.14/pikpak-fuse_0.1.14-1_aarch64_generic.ipk
-wget https://github.com/ykxVK8yL5L/pikpak-fuse/releases/download/v0.1.14/luci-app-pikpak-fuse_0.1.14-1_all.ipk
+wget https://github.com/ykxVK8yL5L/pikpak-fuse/releases/download/v0.1.14/luci-app-pikpak-fuse_0.1.14_all.ipk
 wget https://github.com/ykxVK8yL5L/pikpak-fuse/releases/download/v0.1.14/luci-i18n-pikpak-fuse-zh-cn_0.1.14-1_all.ipk
 opkg install pikpak-fuse_0.1.13-1_aarch64_generic.ipk
 opkg install luci-app-pikpak-fuse_0.1.13_all.ipk
