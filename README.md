@@ -1,3 +1,6 @@
+# 已经不能用了，登陆接口变更 不再维护这个 可以关注：https://github.com/ykxVK8yL5L/fastwebdav_deta
+
+
 #  能用  但是由于fuse机制 会大量请求服务器  体验不好  不建议使用
 # docker: https://hub.docker.com/r/ykxvk8yl5l/pikpak-fuse
 # 演示视频: https://youtu.be/fl1Lp1_1AR4   
